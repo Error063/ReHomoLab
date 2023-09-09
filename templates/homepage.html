@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <link rel="stylesheet" href="https://unpkg.com/mdui@1.0.2/dist/css/mdui.min.css" />
+    <script src="https://unpkg.com/mdui@1.0.2/dist/js/mdui.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static',filename='css/main.css') }}">
+    <title>Title</title>
+</head>
+<body style="margin: 0;">
+    <div id="topbar">
+        <div class="mdui-progress topbar-progress-bar">
+            <div class="mdui-progress-indeterminate topbar-progress"></div>
+        </div>
+        <div class="topbar-left">
+            <div id="forum-logo"></div>
+        </div>
+        <div class="topbar-right">
+            <button class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon material-icons">access_time</i></button>
+            <button class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon material-icons">settings</i></button>
+        </div>
+    </div>
+    <div id="container">
+        <div id="left">
+            <div id="recommend" class="forum mdui-ripple">
+                <span>推荐</span>
+            </div>
+            <div id="official" class="forum mdui-ripple">
+                <span>官方资讯</span>
+            </div>
+            <div id="forums" style="margin-top: 25px;"></div>
+            <div class="user-info">
+                <div class="user-avatar"></div>
+                <div class="user-info-text">
+                    <span class="user-nickname"></span>
+                    <br>
+                    <span class="user-uid"></span>
+                </div>
+
+            </div>
+        </div>
+        <div id="right">
+            <div id="right-items">
+            </div>
+        </div>
+    </div>
+<div id="menu" class="menu">
+    <div class="menu__item" onclick="load_page('back')"><i class="mdui-icon material-icons">arrow_back</i><span>返回</span></div>
+    <div class="menu__item" onclick="load_page('reload')"><i class="mdui-icon material-icons">refresh</i><span>刷新</span></div>
+    <div class="menu__item" onclick="load_page('home')"><i class="mdui-icon material-icons">home</i><span>返回分区主页</span></div>
+    <hr>
+    <div class="menu__item ">切换到其他分区 <span class="mdui-menu-item-more"></span>
+        <div id="submenu" class="submenu switch-game"></div>
+    </div>
+</div>
+<div id="account-menu" class="menu">
+    <div class="menu__item" onclick=""><i class="mdui-icon material-icons">refresh</i><span>刷新登录状态</span></div>
+    <div class="menu__item" onclick="" style="color: red"><i class="mdui-icon material-icons">exit_to_app</i><span>退出登录</span></div>
+</div>
+</body>
+</html>
+<script>
+    let page_api = '{{ page_api | safe }}';
+    let forum_api = '{{ forums_api | safe }}';
+    let game_api = '/api/game_list'
+    let current_user_api = '/api/current_user'
+    let article_element = document.querySelector("#right-items");
+    let forum_element = document.querySelector('#forums')
+    let right_element = document.querySelector('#right')
+    let game_element = document.getElementsByClassName('switch-game')[0]
+    let menu = document.getElementById('menu');
+    let submenu = document.getElementById('submenu');
+    let account_menu = document.getElementById('account-menu');
+    let post = null;
+    let temp = '';
+    let page = 1;
+    let last_scroll_size = 0
+    let bottomNotice = true;
+    let game = location.href.split('/').slice(3)[0]
+
+    document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
+
+    document.querySelector('#recommend').setAttribute('onclick', `load_page('/${game}')`)
+
+    function load_page(url) {
+        article_element.innerHTML = ''
+        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
+        switch (url) {
+            case 'reload':
+                location.reload();
+                break;
+            case 'back':
+                history.back();
+                break;
+            case 'home':
+                location.href = `/${game}`
+                break;
+            default:
+                location.href = url
+                break;
+        }
+    }
+
+    function getQueryString(url_string, name) {
+        let vars = url_string.split('?')[1].split("&");
+        for (let i=0; i<vars.length; i++) {
+            const pair = vars[i].split("=");
+            if(pair[0] === name){
+                return pair[1];
+            }
+       }
+       return '';
+    }
+
+    window.onload = function () {
+        let xhr_user = new XMLHttpRequest();
+        xhr_user.open("get", current_user_api);
+        xhr_user.onreadystatechange = function () {
+            if (xhr_user.readyState === 4 && xhr_user.status === 200) {
+                let user = JSON.parse(xhr_user.responseText);
+                document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname;
+                document.getElementsByClassName('user-uid')[0].innerHTML = 'UID: ' + user.uid;
+                document.getElementsByClassName('user-avatar')[0].setAttribute('style', `background-image: url('${user.avatar}');`);
+            }
+        }
+        xhr_user.send()
+        let xhr_forum = new XMLHttpRequest();
+        let forum_item;
+        xhr_forum.open("get", forum_api);
+        xhr_forum.onreadystatechange = function () {
+            if (xhr_forum.readyState === 4 && xhr_forum.status === 200) {
+                let forum = JSON.parse(xhr_forum.responseText);
+                if (forum.length > 0) {
+                    for (let i = 0; i < forum.length; i++) {
+                        if (forum[i].name === '公告' || forum[i].name === '官方') {
+                            forum_item = document.querySelector('#official')
+                            forum_item.setAttribute('onclick', `load_page('/${game}/forum?forum_id=${forum[i].id}')`);
+                            if (forum[i].id.toString() === getQueryString(page_api, 'forum_id')) {
+                                forum_item.setAttribute('class', 'forum mdui-ripple selected-forum');
+                            } else {
+                                forum_item.setAttribute('class', 'forum mdui-ripple');
+                            }
+                        } else {
+                            forum_item = document.createElement('div');
+                            forum_item.setAttribute('onclick', `load_page('/${game}/forum?forum_id=${forum[i].id}')`);
+                            if (forum[i].id.toString() === getQueryString(page_api, 'forum_id')) {
+                                forum_item.setAttribute('class', 'forum mdui-ripple selected-forum');
+                            } else {
+                                forum_item.setAttribute('class', 'forum mdui-ripple');
+                            }
+                            forum_item.innerHTML = `<span>${forum[i].name}</span>`;
+                            forum_element.append(forum_item);
+                        }
+                    }
+                }
+            }
+        }
+        xhr_forum.send();
+        let xhr_game = new XMLHttpRequest();
+        xhr_game.open('get', game_api);
+        xhr_game.onreadystatechange = function () {
+            if (xhr_game.readyState === 4 && xhr_game.status === 200) {
+                let game = JSON.parse(xhr_game.responseText);
+                if (game.length > 0) {
+                    for (let i = 0; i < game.length; i++) {
+                        game_element.innerHTML += `<div class="submenu__item" onclick="load_page('/${game[i][3]}')">${game[i][0]}</div>`
+                    }
+                }
+            }
+        }
+        xhr_game.send()
+        if(getQueryString(page_api, 'type') === 'feed'){
+            document.querySelector('#recommend').classList.add('selected-forum');
+        }
+        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
+    }
+
+    function setActiveForum() {
+        let page_type = getQueryString(page_api, 'type');
+        if(page_type === 'feed'){
+            document.querySelector('#recommend').classList.add('selected-forum');
+        }
+    }
+
+
+    function addArticle() {
+        let xhr = new XMLHttpRequest();
+        xhr.open("get", page_api + `&page=${page}`);
+        xhr.onreadystatechange = function () {
+            if (xhr.readyState === 4 && xhr.status === 200) {
+                let articles = JSON.parse(xhr.responseText);
+                if (articles.length > 0 && bottomNotice) {
+                    page++;
+                    for (let i = 0; i < articles.length; i++) {
+                        article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}"><div class="user" onclick="" style="cursor: pointer"><img class="avatar"src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo"onclick=""style="cursor: pointer"><div class="image"><div class="articleCover"style="${articles[i].cover === ''?`background-color: rgba(var(--personal-color), 0.1)`:`background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
+                    }
+                }
+            }
+        }
+        xhr.send();
+    }
+    function handleScroll() {
+        if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight - 100 > last_scroll_size) {
+            last_scroll_size = right_element.scrollTop + right_element.clientHeight;
+            console.log('active, ' + last_scroll_size)
+            document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
+            addArticle();
+            document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
+        }
+    }
+    right_element.onscroll = handleScroll;
+
+    window.oncontextmenu = function(e){
+        e.preventDefault();
+        let element = e.target;
+        let flag = false;
+        let type = 'normal';
+        do {
+            if (element.classList.contains('postCard')) {
+                flag = true;
+                type = 'postCard';
+                break;
+            } else if (element.classList.contains('user-info')) {
+                flag = true;
+                type = 'user-info';
+                break;
+            } else {
+                element = element.parentElement;
+            }
+        }while (flag || element !== null)
+        if (!flag) {
+            let x = e.clientX;
+            let y = e.clientY;
+            let winWidth = window.innerWidth;
+            let winHeight = window.innerHeight;
+            let menuWidth = menu.offsetWidth;
+            let menuHeight = menu.offsetHeight;
+            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
+            menu.style.top = y + 'px';
+            menu.style.left = x + 'px';
+            if (x > (winWidth - menuWidth - submenu.offsetWidth)) {
+                submenu.style.left = `-${submenu.offsetWidth + 10}px`;
+            } else {
+                submenu.style.left = '';
+                submenu.style.right = `-${submenu.offsetWidth}px`;
+            }
+            if (y > (winHeight - menuHeight - submenu.offsetHeight)) {
+                submenu.style.top = `-${submenu.offsetHeight - 15}px`;
+            } else {
+                submenu.style.top = '-15px';
+            }
+            menu.classList.add('active');
+        }else if (type === 'postCard'){
+            alert(element.getAttribute('articleId'));
+        }else if (type === 'user-info'){
+            let x = e.clientX;
+            let y = e.clientY;
+            let winWidth = window.innerWidth;
+            let winHeight = window.innerHeight;
+            let menuWidth = account_menu.offsetWidth;
+            let menuHeight = account_menu.offsetHeight;
+            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
+            account_menu.style.top = y + 'px';
+            account_menu.style.left = x + 'px';
+            account_menu.classList.add('active');
+        }
+    }
+    window.addEventListener('click', function() {
+        menu.classList.remove('active');
+        account_menu.classList.remove('active');
+    })
+    addArticle();
+</script>

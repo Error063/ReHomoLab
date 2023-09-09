@@ -1,0 +1,257 @@
+@import url(/css);
+body{
+    background-color: rgba(var(--personal-color), 0.3);
+    overflow: hidden;
+    min-width: 1000px;
+}
+#left {
+    height: -webkit-fill-available;
+    position: fixed;
+    top: 50px;
+    width: 300px;
+    z-index: 999;
+}
+#topbar{
+    width: 100%;
+    height: 50px;
+    position: fixed;
+    top: 0;
+    z-index: 999;
+}
+.topbar-progress-bar{
+    margin: 0 !important;
+    /*visibility: hidden;*/
+    background-color: rgba(var(--personal-color), 0.4);
+}
+.topbar-progress{
+    background-color: rgba(var(--personal-color), 0.7);
+}
+#topbar *:not(button,i,span){
+    float: left;
+    margin-top: 10px;
+}
+#topbar i{
+    font-size: 22px;
+}
+.topbar-left{
+    position: absolute;
+    top: 0;
+    left: 20px;
+}
+.topbar-right{
+    position: absolute;
+    top: 0;
+    right: 20px;
+}
+#right{
+    position: absolute;
+    right: 0;
+    top: 60px;
+    height: -webkit-fill-available;
+    width: calc(100% - 300px);
+    border-radius: 20px 20px 0 0;
+    background-color: rgba(255, 255, 255, 0.3);
+    overflow: auto;
+}
+#right::-webkit-scrollbar {
+  display: none;
+}
+#right-items{
+    overflow: auto;
+    margin: 20px auto 50px;
+    width: 80%;
+}
+.forum-title{
+    font-size: 20px;
+    margin-left: 25px;
+    margin-right: 30px;
+    margin-top: 0 !important;
+    line-height: 2.2;
+}
+.forum{
+    height: 50px;
+    margin: 10px 10px 10px 0;
+    padding: 0 10px 0 50px;
+    line-height: 3;
+    border-radius: 0 25px 25px 0;
+    font-size: 16px;
+}
+.forum:hover:not(.selected-forum){
+    background-color: rgba(128, 128, 128, 0.1);
+}
+.selected-forum{
+    background-color: rgba(var(--personal-color), 0.4);
+    color: rgba(var(--personal-color));
+}
+#forum-logo{
+    background-size: cover;
+    height: 35px;
+    width: 35px;
+    margin: 0 10px 10px 0;
+    margin-top: 0 !important;
+    border-radius: 50%;
+}
+.postCard{
+    width: 500px;
+    height: 450px;
+    text-decoration: none;
+    float: left;
+    margin: 10px;
+    color: black;
+    background-color: rgba(var(--personal-color), 0.1);
+    border-radius: 10px;
+}
+.postCard .user{
+    margin: unset !important;
+    padding: 20px;
+}
+.account .user {
+    margin: unset !important;
+    padding: 15px;
+}
+.postCard:not(.control){
+    cursor: pointer;
+}
+.user{
+    margin: 0 auto;
+    /*padding: 5%;*/
+    width: 100%;
+    height: 40px;
+    cursor: pointer;
+}
+.user:not(.commentUser and .userInSetting){
+    margin: 25px;
+}
+.user .avatar{
+    float: left;
+    border: none;
+    border-radius: 50%;
+    max-height: 40px;
+    max-width: 40px;
+    background-color: white;
+}
+.user .userinfo{
+    position: relative;
+    left: 5px;
+}
+.user .userinfo .nickname{
+    position: relative;
+    font-weight: 500;
+    font-size: 16px;
+}
+.user .userinfo .describe{
+    position: relative;
+    top: 1px;
+    font-size: 8px;
+}
+/* image */
+.image .articleCover{
+    width: 95%;
+    height: 220px;
+    margin: 10px auto;
+    background: white no-repeat 100% 0;
+    background-size: cover;
+    border-radius: 10px;
+}
+.info{
+    margin: 10px;
+}
+.info .articleTitle{
+    margin: 15px;
+    font-size: 18px;
+}
+.info .articleDescribe{
+    margin: 15px;
+    font-size: 14px;
+}
+.mdui-snackbar{
+    border-radius: 20px;
+}
+#overlay {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    width: 100%;
+    height: 100%;
+    font-size: 16px;
+    background-color: rgba(0, 0, 0, 0.5);
+    z-index: 114514;
+}
+.menu{
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #323232;
+    border-radius: 10px;
+    visibility: hidden;
+    z-index: 1919810;
+    color: #fff;
+    padding: 10px 0;
+}
+.active{
+    visibility: visible;
+}
+.menu__item, .submenu__item{
+    height: 30px;
+    line-height: 2;
+    padding: 0 15px;
+}
+.menu__item:hover, .submenu__item:hover{
+    background-color: rgba(218, 220, 224, 0.35);
+}
+.menu__item:hover .submenu{
+    opacity: 1;
+}
+.submenu{
+    position: relative;
+    top: -20px;
+    left: 150px;
+    opacity: 0;
+    background: #323232;
+    border-radius: 10px;
+    line-height: 1.5;
+    z-index: 1919810;
+    color: #fff;
+    padding: 10px 0;
+}
+.icon{
+    position: absolute;
+    right: 3px;
+}
+span:not(.mdui-menu-item-more, .user-nickname, .user-uid){
+    margin-left: 20px;
+}
+hr{
+    color: rgb(128, 128, 128);
+}
+.user-info{
+    position: fixed;
+    left: 0;
+    bottom: 0;
+    height: 80px;
+    width: 280px;
+    margin: 10px;
+    background-color: rgba(var(--personal-color), 0.4);
+    border-radius: 10px;
+}
+.user-avatar{
+    height: 50px;
+    width: 50px;
+    background: white no-repeat;
+    background-size: cover;
+    border-radius: 50%;
+    float: left;
+    margin: 15px;
+}
+.user-info-text{
+    float: left;
+    margin-top: 15px;
+    margin-bottom: 15px;
+}
+.user-nickname{
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+.user-uid{
+    font-size: 10px;
+}
