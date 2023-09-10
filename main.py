@@ -10,7 +10,7 @@ import webview
 
 app = Flask(__name__)
 
-color_mode = 'auto'
+color_mode = 'dark'
 
 
 @app.route('/css')
@@ -80,7 +80,7 @@ def api(actions):
             return jsonify(bbs.getGame(query_game))
         case 'current_user':
             user = bbs.User()
-            return jsonify({'nickname': user.getNickname(), "uid": user.getUid(), "avatar": user.getAvatar()})
+            return jsonify({'nickname': user.getNickname(), "uid": user.getUid(), "avatar": user.getAvatar(), 'isLogin': user.isLogin})
         case _:
             return '405 Method Not Allowed', 405
 

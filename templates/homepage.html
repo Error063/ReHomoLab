@@ -57,6 +57,23 @@
     <div class="menu__item" onclick=""><i class="mdui-icon material-icons">refresh</i><span>刷新登录状态</span></div>
     <div class="menu__item" onclick="" style="color: red"><i class="mdui-icon material-icons">exit_to_app</i><span>退出登录</span></div>
 </div>
+<div id="post-menu" class="menu">
+    <div class="menu__item" id="copy" onclick=""><i class="mdui-icon material-icons" id="copy-icon">content_copy</i><span>复制文章链接</span></div>
+    <div class="menu__item" id="upvote" onclick=""><i class="mdui-icon material-icons" id="upvote-icon">thumb_up</i><span id="upvote-status">点赞</span></div>
+    <div class="menu__item" id="collect" onclick=""><i class="mdui-icon material-icons" id="collect-icon">star</i><span id="collect-status">收藏</span></div>
+</div>
+<div class="overlay disabled">
+    <div class="overlay-window">
+        <div class="overlay-window-wrapper">
+                <div class="overlay-window-topbar">
+                <button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn">
+                    <i class="mdui-icon material-icons">close</i>
+                </button>
+            </div>
+            <div class='overlay-window-main'></div>
+        </div>
+    </div>
+</div>
 </body>
 </html>
 <script>
@@ -71,6 +88,8 @@
     let menu = document.getElementById('menu');
     let submenu = document.getElementById('submenu');
     let account_menu = document.getElementById('account-menu');
+    let post_menu = document.getElementById('post-menu');
+    let overlay_window = document.getElementsByClassName('overlay-window-main')[0]
     let post = null;
     let temp = '';
     let page = 1;
@@ -121,6 +140,9 @@
                 document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname;
                 document.getElementsByClassName('user-uid')[0].innerHTML = 'UID: ' + user.uid;
                 document.getElementsByClassName('user-avatar')[0].setAttribute('style', `background-image: url('${user.avatar}');`);
+                if(user.isLogin) {
+                    document.getElementsByClassName('user-info')[0].setAttribute('login', '')
+                }
             }
         }
         xhr_user.send()
@@ -192,7 +214,7 @@
                 if (articles.length > 0 && bottomNotice) {
                     page++;
                     for (let i = 0; i < articles.length; i++) {
-                        article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}"><div class="user" onclick="" style="cursor: pointer"><img class="avatar"src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo"onclick=""style="cursor: pointer"><div class="image"><div class="articleCover"style="${articles[i].cover === ''?`background-color: rgba(var(--personal-color), 0.1)`:`background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
+                        article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}" ${articles[i]['collect']?'collected':''} ${articles[i]['upvote']?'upvoted':''}><div class="user" onclick="" style="cursor: pointer"><img class="avatar"src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo"onclick=""style="cursor: pointer"><div class="image"><div class="articleCover"style="${articles[i].cover === ''?`background-color: rgba(var(--personal-color), 0.1)`:`background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
                     }
                 }
             }
@@ -200,18 +222,132 @@
         xhr.send();
     }
     function handleScroll() {
-        if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight - 100 > last_scroll_size) {
+        if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight > last_scroll_size) {
             last_scroll_size = right_element.scrollTop + right_element.clientHeight;
             console.log('active, ' + last_scroll_size)
             document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
+            console.log('adding')
             addArticle();
             document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
         }
     }
     right_element.onscroll = handleScroll;
 
+    function copy(text) {
+        navigator.clipboard.writeText(text).then(function () {
+            /* clipboard successfully set */
+            mdui.snackbar({
+                message: '复制成功',
+                position: 'right-top',
+                timeout: 1000
+            });
+        }, function () {
+            /* clipboard successfully set */
+            mdui.snackbar({
+                message: '复制失败',
+                position: 'right-top',
+                timeout: 1000
+            });
+        }, 2000)
+    }
+
     window.oncontextmenu = function(e){
         e.preventDefault();
+        menu.classList.remove('active');
+        account_menu.classList.remove('active');
+        post_menu.classList.remove('active');
+        let element = e.target;
+        let flag = false;
+        let type = 'normal';
+        do {
+            if (element.classList.contains('postCard')) {
+                flag = true;
+                type = 'postCard';
+                break;
+            } else if (element.classList.contains('user-info')) {
+                flag = true;
+                type = 'user-info';
+                break;
+            } else if (element.classList.contains('overlay')) {
+                flag = true;
+                type = 'overlay';
+                break;
+            }else {
+                element = element.parentElement;
+            }
+        }while (flag || element !== null)
+        if (!flag) {
+            let x = e.clientX;
+            let y = e.clientY;
+            let winWidth = window.innerWidth;
+            let winHeight = window.innerHeight;
+            let menuWidth = menu.offsetWidth;
+            let menuHeight = menu.offsetHeight;
+            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
+            menu.style.top = y + 'px';
+            menu.style.left = x + 'px';
+            if (x > (winWidth - menuWidth - submenu.offsetWidth)) {
+                submenu.style.left = `-${submenu.offsetWidth + 20}px`;
+            } else {
+                submenu.style.left = '';
+                submenu.style.right = `-${submenu.offsetWidth + 10}px`;
+            }
+            if (y > (winHeight - menuHeight - submenu.offsetHeight)) {
+                submenu.style.top = `-${submenu.offsetHeight - 15}px`;
+            } else {
+                submenu.style.top = '-35px';
+            }
+            menu.classList.add('active');
+        }else if (type === 'postCard'){
+            if('collected' in element.attributes){
+                document.querySelector('#collect').innerHTML = '<i class="mdui-icon material-icons" id="collect-icon">star_border</i><span id="collect-status">取消收藏</span>'
+            }else{
+                document.querySelector('#collect').innerHTML = '<i class="mdui-icon material-icons" id="collect-icon">star</i><span id="collect-status">收藏</span>'
+            }
+            if('upvoted' in element.attributes){
+                document.querySelector('#upvote').innerHTML = '<i class="mdui-icon material-icons" id="upvote-icon">thumb_down</i><span id="upvote-status">取消点赞</span>'
+            }else{
+                document.querySelector('#upvote').innerHTML = '<i class="mdui-icon material-icons" id="upvote-icon">thumb_up</i><span id="upvote-status">点赞</span>'
+            }
+            let post_id = element.getAttribute('articleId');
+            document.querySelector('#copy').addEventListener('click', function () {
+                copy(`https://www.miyoushe.com/${game}/article/${post_id}`);
+            })
+            let x = e.clientX;
+            let y = e.clientY;
+            let winWidth = window.innerWidth;
+            let winHeight = window.innerHeight;
+            let menuWidth = post_menu.offsetWidth;
+            let menuHeight = post_menu.offsetHeight;
+            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
+            post_menu.style.top = y + 'px';
+            post_menu.style.left = x + 'px';
+            post_menu.classList.add('active');
+        }else if (type === 'user-info' && 'login' in element.attributes){
+            let x = e.clientX;
+            let y = e.clientY;
+            let winWidth = window.innerWidth;
+            let winHeight = window.innerHeight;
+            let menuWidth = account_menu.offsetWidth;
+            let menuHeight = account_menu.offsetHeight;
+            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
+            account_menu.style.top = y + 'px';
+            account_menu.style.left = x + 'px';
+            account_menu.classList.add('active');
+        }
+    }
+    function showArticle(postId) {
+        overlay_window.innerHTML = ''
+        overlay_window.innerHTML = `<div class="test-height">${postId}</div>`
+        document.getElementsByClassName('overlay')[0].classList.remove('disabled')
+    }
+    window.addEventListener('click', function(e) {
+        menu.classList.remove('active');
+        account_menu.classList.remove('active');
+        post_menu.classList.remove('active');
         let element = e.target;
         let flag = false;
         let type = 'normal';
@@ -228,48 +364,17 @@
                 element = element.parentElement;
             }
         }while (flag || element !== null)
-        if (!flag) {
-            let x = e.clientX;
-            let y = e.clientY;
-            let winWidth = window.innerWidth;
-            let winHeight = window.innerHeight;
-            let menuWidth = menu.offsetWidth;
-            let menuHeight = menu.offsetHeight;
-            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
-            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
-            menu.style.top = y + 'px';
-            menu.style.left = x + 'px';
-            if (x > (winWidth - menuWidth - submenu.offsetWidth)) {
-                submenu.style.left = `-${submenu.offsetWidth + 10}px`;
-            } else {
-                submenu.style.left = '';
-                submenu.style.right = `-${submenu.offsetWidth}px`;
-            }
-            if (y > (winHeight - menuHeight - submenu.offsetHeight)) {
-                submenu.style.top = `-${submenu.offsetHeight - 15}px`;
-            } else {
-                submenu.style.top = '-15px';
-            }
-            menu.classList.add('active');
-        }else if (type === 'postCard'){
-            alert(element.getAttribute('articleId'));
-        }else if (type === 'user-info'){
-            let x = e.clientX;
-            let y = e.clientY;
-            let winWidth = window.innerWidth;
-            let winHeight = window.innerHeight;
-            let menuWidth = account_menu.offsetWidth;
-            let menuHeight = account_menu.offsetHeight;
-            x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
-            y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
-            account_menu.style.top = y + 'px';
-            account_menu.style.left = x + 'px';
-            account_menu.classList.add('active');
+        switch (type){
+            case "postCard":
+                let post_id = element.getAttribute('articleId');
+                showArticle(post_id);
+                break;
+            default:
+                break;
         }
-    }
-    window.addEventListener('click', function() {
-        menu.classList.remove('active');
-        account_menu.classList.remove('active');
+    })
+    document.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function () {
+        document.getElementsByClassName('overlay')[0].classList.add('disabled')
     })
     addArticle();
 </script>

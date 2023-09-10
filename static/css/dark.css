@@ -8,3 +8,9 @@ body{
 .postCard {
     background-color: rgba(var(--personal-color), 0.2) !important;
 }
+.overlay-window{
+    background-color: rgb(49, 49, 49) !important;
+}
+.overlay-window-wrapper {
+    background-color: rgba(var(--personal-color), 0.0) !important;
+}
