@@ -3,6 +3,7 @@ import os.path
 from flask import Flask, render_template, jsonify, request, redirect, make_response
 
 from libmiyoushe import bbs
+from libmiyoushe import base as lib_base
 
 import base
 
@@ -10,7 +11,7 @@ import webview
 
 app = Flask(__name__)
 
-color_mode = 'dark'
+color_mode = 'light'
 
 
 @app.route('/css')
@@ -37,26 +38,25 @@ def favicon():
 
 @app.route('/<game>')
 def game_main(game):
-    gid = bbs.getGame(game)[1]
-    return render_template('homepage.html', page_api=f'/api/homepage?type=feed&gid={gid}',
-                           forums_api=f'/api/forum_list?gid={gid}')
+    return render_template('homepage.html')
 
 
 @app.route('/<game>/forum')
 def forum_page(game):
-    gid = bbs.getGame(game)[1]
-    forum_id = request.args.get('forum_id', '26')
-    return render_template('homepage.html', page_api=f'/api/homepage?type=forum&gid={gid}&forum_id={forum_id}',
-                           forums_api=f'/api/forum_list?gid={gid}')
+    return render_template('homepage.html')
 
 
-@app.route('/api/<actions>')
+@app.route('/api/<actions>', methods=['GET'])
 def api(actions):
     match actions:
+        case 'connection_test':
+            return str(lib_base.connectionTest()).lower()
         case 'homepage':
             page_type = request.args.get('type', 'feed')
             gid = request.args.get('gid', '2')
             page = request.args.get('page', '1')
+            if gid.isalpha():
+                gid = str(bbs.getGame(gid)[1])
             match page_type:
                 case 'feed':
                     articles = bbs.Page(gid, page_type)
@@ -73,16 +73,26 @@ def api(actions):
                     return '405 Method Not Allowed', 405
         case 'forum_list':
             gid = request.args.get('gid', '-1')
-            forum_list = bbs.Forum.getAllForum()[gid] if gid != '-1' else bbs.Forum.getAllForum()
-            return jsonify(forum_list)
+            print(gid)
+            if gid.isdigit():
+                forum_list = bbs.Forum.getAllForum()[gid] if gid != '-1' else bbs.Forum.getAllForum()
+                return jsonify(forum_list)
+            elif gid.isalpha():
+                forum_list = bbs.Forum.getAllForum()[str(bbs.getGame(gid)[1])]
+                return jsonify(forum_list)
+            else:
+                forum_list = bbs.Forum.getAllForum()
+                return jsonify(forum_list)
         case 'game_list':
             query_game = request.args.get('game', 'all')
             return jsonify(bbs.getGame(query_game))
         case 'current_user':
             user = bbs.User()
-            return jsonify({'nickname': user.getNickname(), "uid": user.getUid(), "avatar": user.getAvatar(), 'isLogin': user.isLogin})
+            return jsonify({'nickname': user.getNickname(), "uid": user.getUid(), "avatar": user.getAvatar(),
+                            'isLogin': user.isLogin})
         case _:
             return '405 Method Not Allowed', 405
+    return '405 Method Not Allowed', 405
 
 
 @app.route('/')
@@ -90,6 +100,14 @@ def main():
     return redirect('/ys')
 
 
+@app.errorhandler(Exception)
+def pageError(err):
+    if 'Connection Failed!' in str(err):
+        window.set_title('!网络连接失败!')
+        return 'Connection Failed!', 503
+
+
 if __name__ == '__main__':
     window = webview.create_window('homolab', app, min_size=(1000, 800))
     webview.start(debug=True)
+    # app.run(host='0.0.0.0')

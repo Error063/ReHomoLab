@@ -182,20 +182,19 @@ body{
 }
 .overlay-window{
     position: fixed;
-    top: 5%;
-    left: 5%;
-    width: 90%;
-    height: 90%;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
     background-color: white;
     z-index: 114515;
-    border-radius: 20px;
+    /*border-radius: 20px;*/
 }
 .overlay-window-wrapper{
     background-color: rgba(var(--personal-color), 0.3);
     width: 100%;
     height: 100%;
     z-index: 114516;
-    border-radius: 20px;
 }
 .overlay-window-topbar{
     height: 30px;
@@ -212,7 +211,7 @@ body{
     width: calc(100% - 40px);
     height: calc(100% - 80px);
     background-color: wheat;
-    border-radius: 20px;
+    border-radius: 10px;
     padding: 10px;
     overflow: auto;
 }
@@ -304,4 +303,19 @@ hr{
 }
 .user-uid{
     font-size: 10px;
+}
+.loading_outter{
+    background-color: white;
+}
+.loading{
+    background-color: rgba(var(--personal-color), 0.3);
+    width: 100%;
+    height: 100%;
+}
+.spinner{
+    position: fixed;
+    top: 40%;
+    left: 50%;
+    width: 50px;
+    height: 50px;
 }
