@@ -1,7 +1,9 @@
 import os.path
+import zipfile
 
 from flask import Flask, render_template, jsonify, request, redirect, make_response
-
+from tkinter import Tk, messagebox
+import requests
 from libmiyoushe import bbs
 from libmiyoushe import base as lib_base
 
@@ -11,7 +13,7 @@ import webview
 
 app = Flask(__name__)
 
-color_mode = 'light'
+color_mode = 'dark'
 
 
 @app.route('/css')
@@ -73,7 +75,6 @@ def api(actions):
                     return '405 Method Not Allowed', 405
         case 'forum_list':
             gid = request.args.get('gid', '-1')
-            print(gid)
             if gid.isdigit():
                 forum_list = bbs.Forum.getAllForum()[gid] if gid != '-1' else bbs.Forum.getAllForum()
                 return jsonify(forum_list)
@@ -90,9 +91,13 @@ def api(actions):
             user = bbs.User()
             return jsonify({'nickname': user.getNickname(), "uid": user.getUid(), "avatar": user.getAvatar(),
                             'isLogin': user.isLogin})
+        case 'article':
+            post_id = request.args.get('post_id')
+            article_action = request.args.get('action', 'main_page')
+            article = bbs.Article(post_id)
+
         case _:
             return '405 Method Not Allowed', 405
-    return '405 Method Not Allowed', 405
 
 
 @app.route('/')
@@ -108,6 +113,17 @@ def pageError(err):
 
 
 if __name__ == '__main__':
+    app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
+    mdui_css = os.path.join(app_dir, 'static', 'mdui', 'css', 'mdui.min.css')
+    mdui_js = os.path.join(app_dir, 'static', 'mdui', 'js', 'mdui.min.js')
+    tmp = os.path.join(app_dir, 'tmp.zip')
+    if not os.path.exists(mdui_css) and not os.path.exists(mdui_js):
+        print("The resources of mdui is missing, downloading...")
+        messagebox.showinfo("请稍后", "正在下载mdui组件...")
+        conn = requests.get('https://cdn.w3cbus.com/mdui.org/mdui-v1.0.1.zip')
+        with open(tmp, mode='wb') as f:
+            f.write(conn.content)
+        zipfile.ZipFile(tmp).extractall(os.path.join(app_dir, 'static', 'mdui'))
+        os.remove(tmp)
     window = webview.create_window('homolab', app, min_size=(1000, 800))
     webview.start(debug=True)
-    # app.run(host='0.0.0.0')

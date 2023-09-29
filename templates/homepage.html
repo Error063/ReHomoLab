@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta http-equiv="Cache-Control" content="no-cache">
-    <link rel="stylesheet" href="https://unpkg.com/mdui@1.0.2/dist/css/mdui.min.css" />
-    <script src="https://unpkg.com/mdui@1.0.2/dist/js/mdui.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static',filename='mdui/css/mdui.min.css') }}" />
+    <script src="{{ url_for('static',filename='mdui/js/mdui.min.js') }}"></script>
     <link rel="stylesheet" href="{{ url_for('static',filename='css/main.css') }}">
     <infos gid=""></infos>
     <title>Title</title>
@@ -81,24 +81,24 @@
 </div>
 </body>
 <script>
-    let network_failed = false
-    let xhr_test = new XMLHttpRequest();
-    xhr_test.open('get', '/connection_test')
-    xhr_test.onreadystatechange = function () {
-        if (xhr_test.responseText !== 'true'){
-            network_failed = true
-        }
+let network_failed = false
+let xhr_test = new XMLHttpRequest();
+xhr_test.open('get', '/connection_test')
+xhr_test.onreadystatechange = function () {
+    if (xhr_test.responseText !== 'true'){
+        network_failed = true
     }
-    xhr_test.send()
-    if (!network_failed) {
-        document.write(`<script src='{{ url_for('static',filename='js/main.js') }}?t=${new Date().getTime()}'><\/script>`)
-    } else {
-        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;');
-        mdui.snackbar({
-            message: '<span style="color: red;font-weight: bold;font-size: 20px">网络连接失败！</span>',
-            position: 'right-top',
-            timeout: 0
-        });
-    }
+}
+xhr_test.send()
+if (!network_failed) {
+    document.write(`<script src='{{ url_for('static',filename='js/main.js') }}?t=${new Date().getTime()}'><\/script>`)
+} else {
+    document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;');
+    mdui.snackbar({
+        message: '<span style="color: red;font-weight: bold;font-size: 20px">网络连接失败！</span>',
+        position: 'right-top',
+        timeout: 0
+    });
+}
 </script>
 </html>
