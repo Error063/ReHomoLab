@@ -108,22 +108,5 @@ def main():
 @app.errorhandler(Exception)
 def pageError(err):
     if 'Connection Failed!' in str(err):
-        window.set_title('!网络连接失败!')
         return 'Connection Failed!', 503
 
-
-if __name__ == '__main__':
-    app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-    mdui_css = os.path.join(app_dir, 'static', 'mdui', 'css', 'mdui.min.css')
-    mdui_js = os.path.join(app_dir, 'static', 'mdui', 'js', 'mdui.min.js')
-    tmp = os.path.join(app_dir, 'tmp.zip')
-    if not os.path.exists(mdui_css) and not os.path.exists(mdui_js):
-        print("The resources of mdui is missing, downloading...")
-        messagebox.showinfo("请稍后", "正在下载mdui组件...")
-        conn = requests.get('https://cdn.w3cbus.com/mdui.org/mdui-v1.0.1.zip')
-        with open(tmp, mode='wb') as f:
-            f.write(conn.content)
-        zipfile.ZipFile(tmp).extractall(os.path.join(app_dir, 'static', 'mdui'))
-        os.remove(tmp)
-    window = webview.create_window('homolab', app, min_size=(1000, 800))
-    webview.start(debug=True)
