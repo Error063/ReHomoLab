@@ -1,8 +1,13 @@
-@import url(/css);
+@import url(/dynamic_css);
 body{
     background-color: rgba(var(--personal-color), 0.3);
+}
+.main-body{
     overflow: hidden;
+    width: 100%;
     min-width: 1000px;
+    height: 100%;
+    min-height: 600px;
 }
 .disabled{
     display: none;
@@ -57,12 +62,17 @@ body{
     overflow: auto;
 }
 #right::-webkit-scrollbar {
-  display: none;
+    display: none;
 }
 #right-items{
     overflow: auto;
     margin: 20px auto 50px;
     width: 80%;
+}
+#forums{
+    margin-top: 15px;
+    max-height: 45%;
+    overflow: auto;
 }
 .forum-title{
     font-size: 20px;
@@ -100,7 +110,7 @@ body{
     text-decoration: none;
     float: left;
     margin: 10px;
-    color: black;
+    /*color: black;*/
     background-color: rgba(var(--personal-color), 0.1);
     border-radius: 10px;
 }
@@ -119,7 +129,7 @@ body{
     margin: 0 auto;
     /*padding: 5%;*/
     width: 100%;
-    height: 40px;
+    height: 70px;
     cursor: pointer;
 }
 .user:not(.commentUser and .userInSetting){
@@ -205,26 +215,41 @@ body{
 }
 .overlay-window-main{
     position: sticky;
-    top: 30px;
+    top: 50px;
     left: 0;
     margin: 0 10px 10px;
-    width: calc(100% - 40px);
-    height: calc(100% - 80px);
-    background-color: wheat;
+    width: calc(100% - 20px);
+    height: calc(100% - 60px);
+    background-color: rgba(var(--personal-color), 0.2);
     border-radius: 5px;
     padding: 10px;
-    overflow: auto;
+    /*overflow: auto;*/
 }
 .overlay-window-main::-webkit-scrollbar{
   display: none;
 }
-.test-height{
-    height: 10000px;
+.article-main{
+    width: 50%;
+    height: 100%;
+    background-color: rgba(var(--personal-color), 0.2);
+    padding: 10px;
+    border-radius: 5px;
+    float: left;
+    overflow-y: scroll;
 }
-.test-color{
-    height: 100px;
-    width: 100px;
-    background: aqua;
+.article-main img{
+    border: none !important;
+}
+.ql-editor{
+    overflow: unset !important;
+}
+.article-right{
+    float: left;
+    height: 100%;
+    width: 50%;
+    padding: 10px;
+    background-color: yellow;
+    border-radius: 5px;
 }
 .menu{
     position: absolute;
@@ -235,7 +260,7 @@ body{
     visibility: hidden;
     z-index: 1919810;
     color: #fff;
-    padding: 10px 0;
+    padding: 5px;
 }
 .active{
     visibility: visible;
@@ -243,7 +268,8 @@ body{
 .menu__item, .submenu__item{
     height: 30px;
     line-height: 2;
-    padding: 0 15px;
+    padding: 0 5px;
+    border-radius: 5px;
 }
 .menu__item:hover, .submenu__item:hover{
     background-color: rgba(218, 220, 224, 0.35);
@@ -253,22 +279,25 @@ body{
 }
 .submenu{
     position: relative;
-    top: -20px;
-    left: 150px;
+    top: 0;
+    left: 136px;
     opacity: 0;
     background: #323232;
     border-radius: 10px;
     line-height: 1.5;
     z-index: 1919810;
     color: #fff;
-    padding: 10px 0;
+    padding: 5px;
+}
+.menu .mdui-icon{
+    font-size: 18px !important;
 }
 .icon{
     position: absolute;
     right: 3px;
 }
 span:not(.mdui-menu-item-more, .user-nickname, .user-uid){
-    margin-left: 20px;
+    margin-left: 10px;
 }
 hr{
     color: rgb(128, 128, 128);

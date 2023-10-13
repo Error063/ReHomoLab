@@ -1,4 +1,9 @@
 import platform
+from threading import Thread
+
+import webview
+
+
 if platform.system() == 'Windows':
     import winreg
 
@@ -12,7 +17,7 @@ def systemColorSet():
         if winreg.QueryValueEx(winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\DWM"),
                                'ColorPrevalence')[0] == 1:
             color = hex(winreg.QueryValueEx(winreg.OpenKey(winreg.HKEY_CURRENT_USER, r"SOFTWARE\Microsoft\Windows\DWM"),
-                                            'ColorizationColor')[0])[4:]
+                                            'ColorizationColor')[0]).split('0x')[-1]
         else:
             color = 'ffffff'
         light = winreg.QueryValueEx(
@@ -22,3 +27,4 @@ def systemColorSet():
         color = '006400'
         light = 1
     return f'{int(color[0:2], 16)}, {int(color[2:4], 16)}, {int(color[4:6], 16)}', light
+
