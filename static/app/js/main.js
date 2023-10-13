@@ -31,6 +31,7 @@ if (location.href.split('/').length <= 4){
 forum_api = `/api/forum_list?gid=${game}`
 
 function apiConnect(url) {
+    /* 连接api的封装 */
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
         xhr.open('GET', url);
@@ -59,6 +60,7 @@ function apiConnect(url) {
 }
 
 function load_page(url) {
+    /* 将页面跳转到指定的url或执行指定的操作 */
     article_element.innerHTML = ''
     document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
     switch (url) {
@@ -78,6 +80,9 @@ function load_page(url) {
 }
 
 function getQueryString(url_string, name) {
+    /**
+     * 根据传入的url链接，返回需要查询的请求字符串的值
+     **/
     let vars = url_string.split('?')[1].split("&");
     for (let i = 0; i < vars.length; i++) {
         const pair = vars[i].split("=");
@@ -91,6 +96,9 @@ function getQueryString(url_string, name) {
 
 
 function addArticle() {
+    /**
+     * 向页面添加一组文章卡片
+     **/
     apiConnect(page_api + `&page=${page}`).then((res) => {
         let articles = JSON.parse(res);
         if (articles.length > 0 && bottomNotice) {
@@ -104,6 +112,9 @@ function addArticle() {
 }
 
 function handleScroll() {
+    /**
+     * 处理右侧面板的滚动事件（元素滚动到底时向页面添加更多文章卡片）
+     **/
     if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight > last_scroll_size) {
         last_scroll_size = right_element.scrollTop + right_element.clientHeight;
         console.log('active, ' + last_scroll_size)
@@ -117,6 +128,9 @@ function handleScroll() {
 right_element.onscroll = handleScroll;
 
 function copy(text) {
+    /**
+     * 复制文本并弹出操作信息
+     **/
     navigator.clipboard.writeText(text).then(function () {
         /* clipboard successfully set */
         mdui.snackbar({
@@ -135,14 +149,14 @@ function copy(text) {
 }
 
 window.oncontextmenu = function (e) {
-    e.preventDefault();
-    menu.classList.remove('active');
+    e.preventDefault();  //禁用浏览器原生右击事件
+    menu.classList.remove('active');  //清除页面中所有存在的右击菜单
     account_menu.classList.remove('active');
     post_menu.classList.remove('active');
-    let element = e.target;
-    let flag = false;
-    let type = 'normal';
-    do {
+    let element = e.target;  //鼠标右击对象区域
+    let flag = false;  //是否有特殊区域是否被找到
+    let type = 'normal';  //触发区域类型
+    do {  //通过向上循环查找来得到鼠标右击区域范围
         if (element.classList.contains('postCard')) {
             flag = true;
             type = 'postCard';
@@ -159,30 +173,31 @@ window.oncontextmenu = function (e) {
             element = element.parentElement;
         }
     } while (flag || element !== null)
-    if (!flag) {
+    if (!flag) {  //默认右击菜单样式
         let x = e.clientX;
         let y = e.clientY;
         let winWidth = window.innerWidth;
         let winHeight = window.innerHeight;
         let menuWidth = menu.offsetWidth;
         let menuHeight = menu.offsetHeight;
-        x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+        x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;  //处理菜单溢出
         y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
         menu.style.top = y + 'px';
         menu.style.left = x + 'px';
-        if (x > (winWidth - menuWidth - submenu.offsetWidth)) {
-            submenu.style.left = `-${submenu.offsetWidth + 20}px`;
+        if (x > (winWidth - menuWidth - submenu.offsetWidth)) {  //处理子菜单x轴溢出
+            submenu.style.left = `-${submenu.offsetWidth + 10}px`;
         } else {
             submenu.style.left = '';
-            submenu.style.right = `-${submenu.offsetWidth + 10}px`;
+            submenu.style.right = `-${submenu.offsetWidth}px`;
         }
-        if (y > (winHeight - menuHeight - submenu.offsetHeight)) {
-            submenu.style.top = `-${submenu.offsetHeight - 15}px`;
+        if (y > (winHeight - menuHeight - submenu.offsetHeight)) {  //处理子菜单y轴溢出
+            submenu.style.top = `-${submenu.offsetHeight - 5}px`;
+            // submenu.style.top = `-${-winHeight + submenu.offsetHeight}px`;
         } else {
             submenu.style.top = '-35px';
         }
         menu.classList.add('active');
-    } else if (type === 'postCard') {
+    } else if (type === 'postCard') {  //文章卡片右击菜单样式
         if ('collected' in element.attributes) {
             document.querySelector('#collect').innerHTML = '<i class="mdui-icon material-icons" id="collect-icon">star_border</i><span id="collect-status">取消收藏</span>'
         } else {
@@ -194,7 +209,7 @@ window.oncontextmenu = function (e) {
             document.querySelector('#upvote').innerHTML = '<i class="mdui-icon material-icons" id="upvote-icon">thumb_up</i><span id="upvote-status">点赞</span>'
         }
         let post_id = element.getAttribute('articleId');
-        document.querySelector('#copy').addEventListener('click', function () {
+        $('#copy').click(() => {
             copy(`https://www.miyoushe.com/${game}/article/${post_id}`);
         })
         let x = e.clientX;
@@ -203,7 +218,7 @@ window.oncontextmenu = function (e) {
         let winHeight = window.innerHeight;
         let menuWidth = post_menu.offsetWidth;
         let menuHeight = post_menu.offsetHeight;
-        x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+        x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;  //处理菜单溢出
         y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
         post_menu.style.top = y + 'px';
         post_menu.style.left = x + 'px';
@@ -215,7 +230,7 @@ window.oncontextmenu = function (e) {
         let winHeight = window.innerHeight;
         let menuWidth = account_menu.offsetWidth;
         let menuHeight = account_menu.offsetHeight;
-        x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;
+        x = winWidth - menuWidth >= x ? x : winWidth - menuWidth;  //处理菜单溢出
         y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
         account_menu.style.top = y + 'px';
         account_menu.style.left = x + 'px';
@@ -224,19 +239,66 @@ window.oncontextmenu = function (e) {
 }
 
 function showArticle(postId) {
+    /**
+     * 在原有页面的基础上添加一层遮罩以显示文章内容
+     **/
     overlay_window.innerHTML = ''
-    overlay_window.innerHTML = `<div class="test-height">${postId}</div>`
+    let article_main = document.createElement('div')
+    article_main.classList.add('article-main')
+    let title = document.createElement('h1')
+    apiConnect(`/api/article?post_id=${postId}&action=raw`).then((res) => {
+        let post_raw = JSON.parse(res)
+        title.innerText = post_raw['data']['post']['post']['subject']
+    })
+    article_main.appendChild(title)
+    let quill_post = document.createElement('div')
+    quill_post.classList.add('ql-editor')
+    apiConnect(`/api/article?post_id=${postId}&action=content`).then((res) => {
+        try{
+            let res_json = JSON.parse(res)
+            console.log(res_json)
+            let ql_image, ql_image_box, img, para
+            for (let i = 0; i < res_json['imgs'].length; i++) {
+                ql_image = document.createElement('div')
+                ql_image_box = document.createElement('div')
+                img = document.createElement('img')
+                ql_image.classList.add('ql-image')
+                ql_image_box.classList.add('ql-image-box')
+                img.src = res_json['imgs'][i]
+                ql_image_box.appendChild(img)
+                ql_image.appendChild(ql_image_box)
+                quill_post.appendChild(ql_image)
+                console.log(quill_post)
+            }
+            para = document.createElement('p')
+            para.innerText = res_json.describe
+            quill_post.appendChild(para)
+        }catch (e) {
+            console.log(e)
+            quill_post.innerHTML = res
+        }finally {
+            // quill_post.innerHTML = res
+        }
+    })
+    article_main.appendChild(quill_post)
+    overlay_window.appendChild(article_main)
+    let article_right = document.createElement('div')
+    article_right.classList.add('article-right')
+    overlay_window.appendChild(article_right)
     document.getElementsByClassName('overlay')[0].classList.remove('disabled')
 }
 
 window.addEventListener('click', function (e) {
-    menu.classList.remove('active');
+    /**
+     * 处理点击事件
+     **/
+    menu.classList.remove('active');  //清除页面中所有存在的右击菜单
     account_menu.classList.remove('active');
     post_menu.classList.remove('active');
-    let element = e.target;
-    let flag = false;
-    let type = 'normal';
-    do {
+    let element = e.target;  //鼠标右击对象区域
+    let flag = false;  //是否有特殊区域是否被找到
+    let type = 'normal';  //触发区域类型
+    do {  //通过向上循环查找来得到鼠标右击区域范围
         if (element.classList.contains('postCard')) {
             flag = true;
             type = 'postCard';
@@ -253,6 +315,8 @@ window.addEventListener('click', function (e) {
         case "postCard":
             let post_id = element.getAttribute('articleId');
             showArticle(post_id);
+            break;
+        case "user-info":
             break;
         default:
             break;
@@ -332,3 +396,7 @@ window.onload = function (e) {
         document.getElementsByClassName('loading_outter')[0].classList.add('disabled')
     }, 1500)
 }
+
+
+
+

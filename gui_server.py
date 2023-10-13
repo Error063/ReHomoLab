@@ -1,26 +1,20 @@
-import os.path
-import zipfile
-
 from flask import Flask, render_template, jsonify, request, redirect, make_response
-from tkinter import Tk, messagebox
-import requests
 from libmiyoushe import bbs
 from libmiyoushe import base as lib_base
 
-import base
+from base import systemColorSet
 
-import webview
 
 app = Flask(__name__)
 
-color_mode = 'dark'
+color_mode = 'light'
 
 
-@app.route('/css')
-def css():
-    color_set = base.systemColorSet()
+@app.route('/dynamic_css')
+def dynamic_css():
+    color_set = systemColorSet()
     insert_css_text = ':root{--personal-color: ' + color_set[0] + ' !important;}'
-    with open('./static/css/dark.css') as f:
+    with open('static/app/css/dark.css', mode='r', encoding='utf8') as f:
         match color_mode:
             case 'light':
                 insert_css_text = insert_css_text
@@ -93,8 +87,25 @@ def api(actions):
                             'isLogin': user.isLogin})
         case 'article':
             post_id = request.args.get('post_id')
-            article_action = request.args.get('action', 'main_page')
+            article_action = request.args.get('action', 'raw')
             article = bbs.Article(post_id)
+            match article_action:
+                case 'raw':
+                    return jsonify(article.result)
+                case 'content':
+                    return article.getStructuredContent() if 'struct' in request.args else article.getContent()
+                case 'video':
+                    return jsonify(article.getVideo())
+                case 'self_operate':
+                    return jsonify({'attitude': article.getSelfAttitude(), 'collect': article.getSelfCollect()})
+                case 'author':
+                    author_info = {
+                        'uid': article.result['data']['post']['user']['uid'],
+                        'nickname': article.result['data']['post']['user']['nickname'],
+                        'avatar': article.result['data']['post']['user']['avatar_url'],
+                        'describe': article.getAuthorDescribe()
+                    }
+                    return jsonify(author_info)
 
         case _:
             return '405 Method Not Allowed', 405
@@ -108,22 +119,4 @@ def main():
 @app.errorhandler(Exception)
 def pageError(err):
     if 'Connection Failed!' in str(err):
-        window.set_title('!网络连接失败!')
         return 'Connection Failed!', 503
-
-
-if __name__ == '__main__':
-    app_dir = os.path.abspath(os.path.join(os.path.dirname(__file__)))
-    mdui_css = os.path.join(app_dir, 'static', 'mdui', 'css', 'mdui.min.css')
-    mdui_js = os.path.join(app_dir, 'static', 'mdui', 'js', 'mdui.min.js')
-    tmp = os.path.join(app_dir, 'tmp.zip')
-    if not os.path.exists(mdui_css) and not os.path.exists(mdui_js):
-        print("The resources of mdui is missing, downloading...")
-        messagebox.showinfo("请稍后", "正在下载mdui组件...")
-        conn = requests.get('https://cdn.w3cbus.com/mdui.org/mdui-v1.0.1.zip')
-        with open(tmp, mode='wb') as f:
-            f.write(conn.content)
-        zipfile.ZipFile(tmp).extractall(os.path.join(app_dir, 'static', 'mdui'))
-        os.remove(tmp)
-    window = webview.create_window('homolab', app, min_size=(1000, 800))
-    webview.start(debug=True)
