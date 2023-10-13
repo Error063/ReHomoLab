@@ -55,7 +55,7 @@ is_window_created = False
 def openWindow():
     global window, is_window_created
     if not is_window_created:
-        window = webview.create_window('homolab', app, min_size=(1200, 800))
+        window = webview.create_window('Re: HoMoLab', app, min_size=(1200, 800))
         is_window_created = True
         webview.start(debug=True)
         window = None

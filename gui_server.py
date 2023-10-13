@@ -16,18 +16,23 @@ app = Flask(__name__)
 color_mode = 'dark'
 
 
-@app.route('/css')
-def css():
-    color_set = base.systemColorSet()
-    insert_css_text = ':root{--personal-color: ' + color_set[0] + ' !important;}'
-    with open('./static/css/dark.css') as f:
-        match color_mode:
-            case 'light':
-                insert_css_text = insert_css_text
-            case 'dark':
-                insert_css_text += '\n' + f.read()
-            case 'auto':
-                insert_css_text += '\n@media (prefers-color-scheme: dark) {\n' + f.read() + '\n}'
+@app.route('/dynamic_css')
+def dynamic_css():
+    color_set = base.systemColorSet()[0]
+    print(color_set)
+    insert_css_text = ':root{--personal-color: ' + color_set + ' !important;}'
+    print(insert_css_text)
+    # with open('./static/css/dark.css') as f:
+    #     match color_mode:
+    #         case 'light':
+    #             insert_css_text = insert_css_text
+    #         case 'dark':
+    #             insert_css_text += '\n' + f.read()
+    #         case 'auto':
+    #             insert_css_text += '\n@media (prefers-color-scheme: dark) {\n' + f.read() + '\n}'
+    #         case _:
+    #             pass
+    # print(insert_css_text)
     resp = make_response(insert_css_text)
     resp.content_type = "text/css"
     return resp
@@ -93,9 +98,15 @@ def api(actions):
                             'isLogin': user.isLogin})
         case 'article':
             post_id = request.args.get('post_id')
-            article_action = request.args.get('action', 'main_page')
+            article_action = request.args.get('action', 'raw')
             article = bbs.Article(post_id)
-
+            match article_action:
+                case 'raw':
+                    return article.result
+                case 'content':
+                    return article.getContent()
+                case _:
+                    pass
         case _:
             return '405 Method Not Allowed', 405
 
