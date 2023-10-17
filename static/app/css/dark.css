@@ -20,3 +20,7 @@ body{
 .loading {
     background-color: rgba(255, 255, 255, 0) !important;
 }
+.menu, .submenu, .mdui-snackbar{
+    color: #fff !important;
+    background: #323232 !important;
+}

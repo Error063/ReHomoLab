@@ -5,11 +5,12 @@
     <meta http-equiv="Cache-Control" content="no-cache">
     <link rel="stylesheet" href="{{ url_for('static',filename='mdui/css/mdui.min.css') }}" />
     <script src="{{ url_for('static',filename='mdui/js/mdui.min.js') }}"></script>
-    <script src="{{ url_for('static',filename='quill/js/quill.js') }}"></script>
     <script src="{{ url_for('static',filename='jquery/js/jquery.min.js') }}"></script>
-    <script src='{{ url_for('static',filename='app/js/element_actions.js') }}'></script>
-    <link rel="stylesheet" href="{{ url_for('static',filename='app/css/main.css') }}">
+    <script src="https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.5/viewer.min.js"></script>
+    <link href="https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.5/viewer.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static',filename='app/css/mys_styles.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static',filename='app/css/main.css') }}">
+
     <title>homolab</title>
 </head>
 <body style="margin: 0;">
@@ -63,7 +64,7 @@
     <div id="account-menu" class="menu">
         <div class="menu__item" onclick=""><i class="mdui-icon material-icons">refresh</i><span>刷新登录状态</span>
         </div>
-        <div class="menu__item" onclick="" style="color: red"><i class="mdui-icon material-icons">exit_to_app</i><span>退出登录</span>
+        <div class="menu__item logout" style="color: red"><i class="mdui-icon material-icons">exit_to_app</i><span>退出登录</span>
         </div>
     </div>
     <div id="post-menu" class="menu">
@@ -74,18 +75,6 @@
         <div class="menu__item" id="collect" onclick=""><i class="mdui-icon material-icons"
                                                            id="collect-icon">star</i><span
                 id="collect-status">收藏</span></div>
-    </div>
-    <div class="overlay disabled">
-        <div class="overlay-window">
-            <div class="overlay-window-wrapper">
-                <div class="overlay-window-topbar">
-                    <button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn">
-                        <i class="mdui-icon material-icons">close</i>
-                    </button>
-                </div>
-                <div class='overlay-window-main'></div>
-            </div>
-        </div>
     </div>
     <div class="overlay loading_outter">
         <div class="loading">

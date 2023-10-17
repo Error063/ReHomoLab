@@ -13,11 +13,11 @@ let menu = document.getElementById('menu');
 let submenu = document.getElementById('submenu');
 let account_menu = document.getElementById('account-menu');
 let post_menu = document.getElementById('post-menu');
-let overlay_window = document.getElementsByClassName('overlay-window-main')[0];
 let page = 1;
 let last_scroll_size = 0;
 let bottomNotice = true;
 let game = location.href.split('/').slice(3)[0];
+let overlay_id = 0;
 
 document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
 document.querySelector('#recommend').setAttribute('onclick', `load_page('/${game}')`)
@@ -29,6 +29,68 @@ if (location.href.split('/').length <= 4){
 }
 
 forum_api = `/api/forum_list?gid=${game}`
+
+let HtmlUtil = {
+    /*1.用浏览器内部转换器实现html编码（转义）*/
+    htmlEncode: function (html) {
+        //1.首先动态创建一个容器标签元素，如DIV
+        let temp = document.createElement("div");
+        //2.然后将要转换的字符串设置为这个元素的innerText或者textContent
+        (temp.textContent !== undefined) ? (temp.textContent = html) : (temp.innerText = html);
+        //3.最后返回这个元素的innerHTML，即得到经过HTML编码转换的字符串了
+        let output = temp.innerHTML;
+        temp = null;
+        return output;
+    },
+    /*2.用浏览器内部转换器实现html解码（反转义）*/
+    htmlDecode: function (text) {
+        //1.首先动态创建一个容器标签元素，如DIV
+        let temp = document.createElement("div");
+        //2.然后将要转换的字符串设置为这个元素的innerHTML(ie，火狐，google都支持)
+        temp.innerHTML = text;
+        //3.最后返回这个元素的innerText或者textContent，即得到经过HTML解码的字符串了。
+        let output = temp.innerText || temp.textContent;
+        temp = null;
+        return output;
+    },
+    /*3.用正则表达式实现html编码（转义）*/
+    htmlEncodeByRegExp: function (str) {
+        let temp = "";
+        if (str.length === 0) return "";
+        temp = str.replace(/&/g, "&");
+        temp = temp.replace(/</g, "\<");
+        temp = temp.replace(/>/g, "\>");
+        temp = temp.replace(/\s/g, " ");
+        temp = temp.replace(/\'/g, "\'");
+        temp = temp.replace(/\"/g, "\"");
+        return temp;
+    },
+    /*4.用正则表达式实现html解码（反转义）*/
+    htmlDecodeByRegExp: function (str) {
+        let temp = "";
+        if (str.length === 0) return "";
+        temp = str.replace(/&/g, "&");
+        temp = temp.replace(/</g, "<");
+        temp = temp.replace(/>/g, ">");
+        temp = temp.replace(/ /g, " ");
+        temp = temp.replace(/'/g, "\'");
+        temp = temp.replace(/"/g, "\"");
+        return temp;
+    },
+    /*5.用正则表达式实现html编码（转义）（另一种写法）*/
+    html2Escape: function (sHtml) {
+        return sHtml.replace(/[<>&"]/g, function (c) {
+            return {'<': '<', '>': '>', '&': '&', '"': '"'}[c];
+        });
+    },
+    /*6.用正则表达式实现html解码（反转义）（另一种写法）*/
+    escape2Html: function (str) {
+        let arrEntities = {'lt': '<', 'gt': '>', 'nbsp': ' ', 'amp': '&', 'quot': '"'};
+        return str.replace(/&(lt|gt|nbsp|amp|quot);/ig, function (all, t) {
+            return arrEntities[t];
+        });
+    }
+};
 
 function apiConnect(url) {
     /* 连接api的封装 */
@@ -91,6 +153,15 @@ function getQueryString(url_string, name) {
         }
     }
     return '';
+}
+
+
+function HTMLDecode(text) {
+    let temp = document.createElement("div");
+    temp.innerHTML = text;
+    let output = temp.innerText || temp.textContent;
+    temp = null;
+    return output;
 }
 
 
@@ -242,50 +313,143 @@ function showArticle(postId) {
     /**
      * 在原有页面的基础上添加一层遮罩以显示文章内容
      **/
-    overlay_window.innerHTML = ''
-    let article_main = document.createElement('div')
-    article_main.classList.add('article-main')
-    let title = document.createElement('h1')
+    let new_overlay = document.createElement('div');
+    new_overlay.classList.add('overlay');
+    new_overlay.innerHTML += `<div class="overlay-window"><div class="overlay-window-wrapper"><div class="overlay-window-topbar"><button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn"><i class="mdui-icon material-icons">close</i></button></div><div class='overlay-window-main'></div></div></div>`;
+    let overlay_window = new_overlay.getElementsByClassName('overlay-window-main')[0];
+    overlay_window.innerHTML = '';
+    let article_main = document.createElement('div');
+    article_main.classList.add('article-main');
+    let title = document.createElement('h1');
+    let quill_post = document.createElement('div');
+    quill_post.classList.add('ql-editor');
     apiConnect(`/api/article?post_id=${postId}&action=raw`).then((res) => {
-        let post_raw = JSON.parse(res)
-        title.innerText = post_raw['data']['post']['post']['subject']
-    })
-    article_main.appendChild(title)
-    let quill_post = document.createElement('div')
-    quill_post.classList.add('ql-editor')
-    apiConnect(`/api/article?post_id=${postId}&action=content`).then((res) => {
-        try{
-            let res_json = JSON.parse(res)
-            console.log(res_json)
-            let ql_image, ql_image_box, img, para
-            for (let i = 0; i < res_json['imgs'].length; i++) {
-                ql_image = document.createElement('div')
-                ql_image_box = document.createElement('div')
-                img = document.createElement('img')
-                ql_image.classList.add('ql-image')
-                ql_image_box.classList.add('ql-image-box')
-                img.src = res_json['imgs'][i]
-                ql_image_box.appendChild(img)
-                ql_image.appendChild(ql_image_box)
-                quill_post.appendChild(ql_image)
-                console.log(quill_post)
-            }
-            para = document.createElement('p')
-            para.innerText = res_json.describe
-            quill_post.appendChild(para)
-        }catch (e) {
-            console.log(e)
-            quill_post.innerHTML = res
-        }finally {
-            // quill_post.innerHTML = res
+        let post_raw = JSON.parse(res);
+        title.innerText = post_raw['data']['post']['post']['subject'];
+        let render_type = post_raw["data"]['post']['post']['view_type'];
+        switch (render_type) {
+            case 1:
+                apiConnect(`/api/article?post_id=${postId}&action=content`).then((res) => {
+                    quill_post.innerHTML = HtmlUtil.htmlDecodeByRegExp(res)
+                    try {
+                        apiConnect(`/api/article?post_id=${postId}&action=video`).then((res) => {
+                            let vod_lists = JSON.parse(res);
+                            let resolutions = document.getElementsByName('resolution');
+                            let videoClass = document.getElementsByClassName('video');
+                            let mhyvods = document.getElementsByClassName('mhy-vod');
+                            for (let i = 0; i < vod_lists.length; i++) {
+                                mhyvods[i].innerHTML += `<video controls class="video" width="100%"></video>`;
+                                mhyvods[i].innerHTML += '<p><label for="resolution">清晰度：</label>';
+                                mhyvods[i].innerHTML += `<select name="resolution" id="resolution" class="resolution" style="width: 100px;" onchange="resolutionChange(${i})"></select></p>`;
+                                let vod_list = vod_lists[i];
+                                let cover = vod_list['cover'];
+                                let vods = vod_list['resolutions'];
+                                videoClass[i].poster = cover;
+                                let options = ''
+                                for (let j = 0;j < vods.length; j++) {
+                                    options += `<option value="${vods[j]['url']}">${vods[j]['definition']}</option>`;
+                                }
+                                resolutions[i].innerHTML = options;
+                                resolutionChange(i);
+                                videoClass[i].pause();
+                            }
+                        });
+                    }catch (e) {
+                        console.log(e);
+                    }
+                });
+                break;
+            case 2:
+                apiConnect(`/api/article?post_id=${postId}&action=content`).then((res) => {
+                    let res_json = JSON.parse(res)
+                    console.log(res_json)
+                    let ql_image, ql_image_box, img, para
+                    for (let i = 0; i < res_json['imgs'].length; i++) {
+                        ql_image = document.createElement('div')
+                        ql_image_box = document.createElement('div')
+                        img = document.createElement('img')
+                        ql_image.classList.add('ql-image')
+                        ql_image_box.classList.add('ql-image-box')
+                        img.src = res_json['imgs'][i]
+                        ql_image_box.appendChild(img)
+                        ql_image.appendChild(ql_image_box)
+                        quill_post.appendChild(ql_image)
+                        console.log(quill_post)
+                    }
+                    para = document.createElement('p')
+                    para.innerText = res_json.describe
+                    quill_post.appendChild(para)
+                })
+                break;
+            case 5:
+                quill_post.innerHTML = '<div class="mhy-vod"><video controls width="100%" class="video"></video><p><label for="resolution">清晰度：</label><select name="resolution" id="resolution" style="width: 100px;"onchange="resolutionChange(0)"></select></p></div>';
+                apiConnect(`/api/article?post_id=${postId}&action=video`).then((res) => {
+                let vod_list = JSON.parse(res)[0];
+                    let cover = vod_list['cover'];
+                    let vods = vod_list['resolutions'];
+                    let resolutions = document.getElementById('resolution');
+                    let videoClass = document.getElementsByClassName('video')[0];
+                    videoClass.poster = cover;
+                    for (let i = 0;i < vods.length; i++) {
+                        resolutions.options.add(new Option(vods[i]['definition'], vods[i]['url']));
+                    }
+                    resolutions.options[0].select = true;
+                    resolutionChange(0);
+                    videoClass.pause();
+                })
+                break;
         }
     })
+    article_main.appendChild(title)
     article_main.appendChild(quill_post)
+    // let article_scripts = document.createElement('script')
+    // article_scripts.src = '/static/app/js/element_actions.js';
+    // article_scripts.defer = true;
+    // article_main.appendChild(article_scripts)
     overlay_window.appendChild(article_main)
     let article_right = document.createElement('div')
     article_right.classList.add('article-right')
     overlay_window.appendChild(article_right)
-    document.getElementsByClassName('overlay')[0].classList.remove('disabled')
+
+
+    new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function (e) {
+        let target_element = e.target;
+        do{
+            if(target_element.classList.contains('overlay')){
+                target_element.remove();
+                break;
+            }else {
+                target_element = target_element.parentElement;
+            }
+        } while (target_element !== null)
+    })
+    new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        let target_element = e.target;
+        let overlays = document.getElementsByClassName('overlay')
+        for (let i = 0; i < overlays.length; i++) {
+            let current_overlay = overlays[i];
+            if(!(current_overlay.classList.contains('loading_outter'))){
+                current_overlay.remove()
+            }
+        }
+    })
+    document.body.appendChild(new_overlay)
+}
+
+function resolutionChange(i) {
+    let resolutions = document.getElementsByName('resolution');
+    let videoClass = document.getElementsByClassName('video');
+
+    let index = resolutions[i].selectedIndex;
+    let vodSrc_selected = resolutions[i].options[index].value;
+    let playTime = videoClass[i].currentTime;
+
+    videoClass[i].src = vodSrc_selected;
+    videoClass[i].load();
+
+    videoClass[i].currentTime = playTime;
+    videoClass[i].play();
 }
 
 window.addEventListener('click', function (e) {
@@ -312,18 +476,30 @@ window.addEventListener('click', function (e) {
         }
     } while (flag || element !== null)
     switch (type) {
+        case "normal":
+            break;
         case "postCard":
             let post_id = element.getAttribute('articleId');
             showArticle(post_id);
             break;
         case "user-info":
+            if(!('login' in element.attributes)){
+                console.log("not login")
+                apiConnect('/api/login').then(() => {})
+                setInterval(() => {
+                    apiConnect(current_user_api).then((res) => {
+                        let user = JSON.parse(res);
+                        console.log(user)
+                        if (user.isLogin) {
+                            load_page('reload')
+                        }
+                    })
+                }, 500)
+            }
             break;
         default:
             break;
     }
-})
-document.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function () {
-    document.getElementsByClassName('overlay')[0].classList.add('disabled')
 })
 
 window.onload = function (e) {
@@ -397,6 +573,31 @@ window.onload = function (e) {
     }, 1500)
 }
 
+document.getElementsByClassName("logout")[0].addEventListener('click', () => {
+    apiConnect("/api/logout").then(() => {
+        load_page('reload')
+    })
+})
 
-
+let current_window = 0;
+setInterval(() => {
+    let windows = document.getElementsByClassName('overlay-window')
+    let detected_window = windows.length;
+    if(current_window !== detected_window){
+        if (current_window < detected_window){
+            console.log('A window had been created!')
+            let ql_images = windows[detected_window - 1].getElementsByClassName('ql-editor')[0].getElementsByClassName("ql-image-box");
+            let I_dont_know = ql_images[0].innerHTML;
+            for (let i = 0; i < ql_images.length; i++) {
+                new Viewer(ql_images[i]);
+            }
+            let new_script = document.createElement('script')
+            new_script.textContent = `$(".ql-fold").click(function() {$(this).toggleClass('expand');});`
+            windows[detected_window - 1].appendChild(new_script)
+        }else {
+            console.log('A window had been closed!')
+        }
+        current_window = detected_window;
+    }
+}, 500)
 

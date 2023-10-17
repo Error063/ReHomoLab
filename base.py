@@ -1,7 +1,4 @@
 import platform
-from threading import Thread
-
-import webview
 
 
 if platform.system() == 'Windows':
@@ -26,5 +23,7 @@ def systemColorSet():
     else:
         color = '006400'
         light = 1
+    if len(color) > 6:
+        color = color[2:]
     return f'{int(color[0:2], 16)}, {int(color[2:4], 16)}, {int(color[4:6], 16)}', light
 
