@@ -6,11 +6,11 @@
     <link rel="stylesheet" href="{{ url_for('static',filename='mdui/css/mdui.min.css') }}" />
     <script src="{{ url_for('static',filename='mdui/js/mdui.min.js') }}"></script>
     <script src="{{ url_for('static',filename='jquery/js/jquery.min.js') }}"></script>
-    <script src="https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.5/viewer.min.js"></script>
-    <link href="https://cdn.bootcdn.net/ajax/libs/viewerjs/1.11.5/viewer.min.css" rel="stylesheet">
+    <script src="{{ url_for('static',filename='viewerjs/js/viewer.min.js') }}"></script>
+    <link rel="stylesheet" href="{{ url_for('static',filename='viewerjs/css/viewer.min.css') }}">
     <link rel="stylesheet" href="{{ url_for('static',filename='app/css/mys_styles.css') }}">
     <link rel="stylesheet" href="{{ url_for('static',filename='app/css/main.css') }}">
-
+    <script src="{{ url_for('static',filename='geetest-sdk/js/gt.0.4.9.js') }}"></script>
     <title>homolab</title>
 </head>
 <body style="margin: 0;">
@@ -23,8 +23,7 @@
             <div id="forum-logo"></div>
         </div>
         <div class="topbar-right">
-            <button class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon material-icons">access_time</i>
-            </button>
+            <button class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon material-icons">access_time</i></button>
             <button class="mdui-btn mdui-btn-icon mdui-ripple"><i class="mdui-icon material-icons">settings</i></button>
         </div>
     </div>
@@ -55,9 +54,9 @@
                 class="mdui-icon material-icons">arrow_back</i><span>返回</span></div>
         <div class="menu__item" onclick="load_page('reload')"><i
                 class="mdui-icon material-icons">refresh</i><span>刷新</span></div>
-        <div class="menu__item" onclick="load_page('home')"><i
-                class="mdui-icon material-icons">home</i><span>返回分区主页</span></div>
-        <div class="menu__item ">切换到其他分区 <span class="mdui-menu-item-more"></span>
+{#        <div class="menu__item" onclick="load_page('home')"><i#}
+{#                class="mdui-icon material-icons">home</i><span>分区主页</span></div>#}
+        <div class="menu__item ">切换分区 <span class="mdui-menu-item-more"></span>
             <div id="submenu" class="submenu switch-game"></div>
         </div>
     </div>
@@ -86,7 +85,7 @@
 <script>
 let network_failed = false
 let xhr_test = new XMLHttpRequest();
-xhr_test.open('get', '/connection_test')
+xhr_test.open('get', '/app-api/connection_test')
 xhr_test.onreadystatechange = function () {
     if (xhr_test.responseText !== 'true'){
         network_failed = true

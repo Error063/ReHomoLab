@@ -1,8 +1,13 @@
 import platform
+import random
+import string
 
 
 if platform.system() == 'Windows':
     import winreg
+
+user_agent = f"HoMoLab/114.514 (Authcode: {''.join((''.join(random.sample(string.digits + string.ascii_letters, 32))).lower())})"
+app_version = '0.0.1'
 
 
 def systemColorSet():
@@ -26,4 +31,3 @@ def systemColorSet():
     if len(color) > 6:
         color = color[2:]
     return f'{int(color[0:2], 16)}, {int(color[2:4], 16)}, {int(color[4:6], 16)}', light
-

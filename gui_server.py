@@ -1,8 +1,9 @@
 import os.path
 import pprint
 import time
+from functools import wraps
 
-from flask import Flask, render_template, jsonify, request, redirect, make_response, Markup
+from flask import Flask, render_template, jsonify, request, redirect, make_response
 from libmiyoushe import bbs, auth
 from libmiyoushe import base as lib_base
 
@@ -18,10 +19,23 @@ else:
     path_prefix = './'
 
 
+def verify_ua(function):
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        ua = str(request.user_agent.string)
+        if ua == base.user_agent or True:
+            return function(*args, **kwargs)
+        else:
+            return "<h1>该页面无法使用浏览器直接访问</h1>", 403
+            # raise Exception('Authentication error')
+
+    return wrapper
+
+
 @app.route('/dynamic_css')
+@verify_ua
 def dynamic_css():
     color_set = base.systemColorSet()[0]
-    print(color_set)
     insert_css_text = ':root{--personal-color: ' + color_set + ' !important;}'
     with open(f'{path_prefix}static/app/css/dark.css') as f:
         match color_mode:
@@ -39,33 +53,58 @@ def dynamic_css():
 
 
 @app.route('/favicon.ico')
+@verify_ua
 def favicon():
     return '404 Not Found', 404
 
 
 @app.route('/<game>')
+@verify_ua
 def game_main(game):
     return render_template('homepage.html')
 
 
 @app.route('/<game>/forum')
+@verify_ua
 def forum_page(game):
     return render_template('homepage.html')
 
 
-@app.route('/api/<actions>', methods=['GET'])
+@app.route('/<game>/vote')
+def vote(game):
+    return 'hello world'
+
+
+@app.route('/api/<actions>', methods=['GET', 'POST'])
+@verify_ua
 def api(actions):
     match actions:
         case 'login':
-            with open(f"{path_prefix}templates/login.html", encoding='utf8') as f:
-                login_page = f.read()
-            auth.loginByWeb(gui_page=login_page, open_webview=False)
-            return ''
+            match request.args.get('method', 'web'):
+                case 'web':
+                    with open(f"{path_prefix}templates/login.html", encoding='utf8') as f:
+                        login_page = f.read()
+                    auth.loginByWeb(gui_page=login_page, open_webview=False)
+                    return ''
+                case _:
+                    return ''
+                # case 'pwd':
+                #     if request.method.lower() == 'post':
+                #         login_json = request.json
+                #         mmt = login_json['mmt']
+                #         verification = login_json['verification']
+                #         match verification['version']:
+                #             case 'null':
+                #                 pass
+                #             case 'gt3':
+                #                 challenge = verification['geetest_challenge']
+                #                 validate = verification['geetest_validate']
+                #                 seccode = verification['geetest_seccode']
+                #             case 'gt4':
+                #                 pass
         case 'logout':
             auth.logout()
             return ''
-        case 'connection_test':
-            return str(lib_base.connectionTest()).lower()
         case 'homepage':
             page_type = request.args.get('type', 'feed')
             gid = request.args.get('gid', '2')
@@ -75,16 +114,16 @@ def api(actions):
             match page_type:
                 case 'feed':
                     articles = bbs.Page(gid, page_type)
-                    return jsonify(articles.articles)
+                    return jsonify({'articles': articles.articles, 'last_id': '#!self_add!#'})
                 case 'official':
                     official_type = request.args.get('official_type', 'news')
                     articles = bbs.Page(gid, official_type, page)
-                    return jsonify(articles.articles)
+
+                    return jsonify({'articles': articles.articles, 'last_id': '#!self_add!#'})
                 case 'forum':
                     forum_id = request.args.get('forum_id', '26')
                     forum = bbs.Forum(forum_id, gid, page, sort_type=1)
-                    pprint.pprint(forum.articles, indent=4)
-                    return jsonify(forum.articles)
+                    return jsonify({'articles': forum.articles, 'last_id': str(forum.last_id)})
                 case _:
                     return '405 Method Not Allowed', 405
         case 'forum_list':
@@ -112,20 +151,55 @@ def api(actions):
             match article_action:
                 case 'raw':
                     return article.result
-                case 'content':
-                    content = article.getContent()
-                    resp = make_response(content)
-                    resp.content_type = "text/html"
-                    return resp
-                case 'video':
-                    return article.getVideo()
                 case _:
-                    pass
+                    return '405 Method Not Allowed', 405
+
+        case 'comment':
+            page_id = request.args.get('post_id')
+            gid = request.args.get('gid')
+            page = request.args.get('page', '1')
+            if not gid.isdigit():
+                gid = str(bbs.getGame(gid)[1])
+            comment = bbs.Comments(page_id, gid, page)
+            return {
+                'comments': comment.comments,
+                'isLast': comment.isLastFlag
+            }
+            # pass
+
+        case 'validate':
+            match request.args.get('method', 'create'):
+                case 'create':
+                    return auth.GeetestVerification.createVerification()
+                case 'verify':
+                    if request.method.upper() == 'POST':
+                        result = auth.GeetestVerification.verifyVerification(request.json)
+                        return result
+                    else:
+                        return '405 Method Not Allowed', 405
+
+        case "like":
+            pass
+
+        case _:
+            return '405 Method Not Allowed', 405
+
+
+@app.route('/app-api/<actions>')
+def app_api(actions):
+    match actions:
+        case 'app_config':
+            return {'version': base.app_version, 'cloud_conn': True}
+        case 'heartbeat':
+            return {'t': int(time.time() * 1000)}
+        case 'connection_test':
+            return str(lib_base.connectionTest()).lower()
         case _:
             return '405 Method Not Allowed', 405
 
 
 @app.route('/')
+@verify_ua
 def main():
     return redirect('/ys')
 
@@ -134,3 +208,5 @@ def main():
 def pageError(err):
     if 'Connection Failed!' in str(err):
         return 'Connection Failed!', 503
+    elif 'Authentication error' in str(err):
+        return 'Authentication Error', 403

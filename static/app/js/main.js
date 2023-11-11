@@ -1,4 +1,4 @@
-console.log('===================================================\nRe: HoMoLab   ----   By Error063\n===================================================');
+console.log(`===================================================\nRe: HoMoLab   ----   By Error063\n===================================================\njs init at ${new Date().toString()}`);
 
 let page_api;
 let forum_api;
@@ -13,11 +13,11 @@ let menu = document.getElementById('menu');
 let submenu = document.getElementById('submenu');
 let account_menu = document.getElementById('account-menu');
 let post_menu = document.getElementById('post-menu');
-let page = 1;
+let page = '';
 let last_scroll_size = 0;
 let bottomNotice = true;
 let game = location.href.split('/').slice(3)[0];
-let overlay_id = 0;
+window.geetest_activated = false;
 
 document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
 document.querySelector('#recommend').setAttribute('onclick', `load_page('/${game}')`)
@@ -92,7 +92,26 @@ let HtmlUtil = {
     }
 };
 
-function apiConnect(url) {
+function formatDate(objDate,fmt){
+　　let o = {
+　　　　"M+" : objDate.getMonth()+1, //月份
+　　　　"d+" : objDate.getDate(), //日
+　　　　"h+" : objDate.getHours()%12 === 0 ? 12 : objDate.getHours()%12, //小时
+　　　　"H+" : objDate.getHours(), //小时
+　　　　"m+" : objDate.getMinutes(), //分
+　　　　"s+" : objDate.getSeconds(), //秒
+　　　　"q+" : Math.floor((objDate.getMonth()+3)/3), //季度
+　　　　"S" : objDate.getMilliseconds() //毫秒
+　　};
+　　if(/(y+)/.test(fmt))
+　　　　fmt=fmt.replace(RegExp.$1, (objDate.getFullYear()+"").substr(4 - RegExp.$1.length));
+　　for(var k in o)
+　　　　if(new RegExp("("+ k +")").test(fmt))
+　　fmt = fmt.replace(RegExp.$1, (RegExp.$1.length===1) ? (o[k]) : (("00"+ o[k]).substr((""+ o[k]).length)));
+　　return fmt;
+}
+
+function apiConnect(url, failed_warning=true) {
     /* 连接api的封装 */
     return new Promise((resolve, reject) => {
         const xhr = new XMLHttpRequest();
@@ -101,24 +120,51 @@ function apiConnect(url) {
             if (xhr.status === 200) {
                 resolve(xhr.responseText);
             } else {
+                if(failed_warning){
+                    mdui.snackbar({
+                        message: '<span style="color: red;font-weight: bold;font-size: 20px">内容获取失败！</span>',
+                        position: 'right-top',
+                        timeout: 0
+                    });
+                }
+
+                reject(new Error(`Request failed with status ${xhr.status}`));
+            }
+        };
+        xhr.onerror = () => {
+            if(failed_warning) {
                 mdui.snackbar({
                     message: '<span style="color: red;font-weight: bold;font-size: 20px">网络连接失败！</span>',
                     position: 'right-top',
                     timeout: 0
                 });
-                reject(new Error(`Request failed with status ${xhr.status}`));
             }
-        };
-        xhr.onerror = () => {
-            mdui.snackbar({
-                message: '<span style="color: red;font-weight: bold;font-size: 20px">网络连接失败！</span>',
-                position: 'right-top',
-                timeout: 0
-            });
             reject(new Error('Request failed'));
         };
         xhr.send();
     });
+}
+
+function checkUpdateAndMessage() {
+    apiConnect('https://app-api.error063.work/homolab/info.json', false).then((res) => {
+        let online_config = JSON.parse(res);
+        // if(online_config.version > local_config.version){
+        //     mdui.alert('有可用更新', '有可用更新');
+        // }
+        let msg;
+        for (let i = 0; i < online_config.message.length; i++) {
+            msg = online_config.message[i];
+            mdui.alert(msg.content, msg.title);
+        }
+    })
+    // apiConnect('/app-api/app_config', false).then((res) => {
+    //     let local_config = JSON.parse(res);
+    //     if(local_config['cloud_conn']){
+    //
+    //     }else{
+    //         console.log('Cannot connect to the developer\'s api because the user setting!')
+    //     }
+    // })
 }
 
 function load_page(url) {
@@ -155,48 +201,27 @@ function getQueryString(url_string, name) {
     return '';
 }
 
-
-function HTMLDecode(text) {
-    let temp = document.createElement("div");
-    temp.innerHTML = text;
-    let output = temp.innerText || temp.textContent;
-    temp = null;
-    return output;
-}
-
-
-
 function addArticle() {
     /**
      * 向页面添加一组文章卡片
      **/
     apiConnect(page_api + `&page=${page}`).then((res) => {
-        let articles = JSON.parse(res);
+        let article_set = JSON.parse(res);
+        let articles = article_set['articles'];
+        let page_get = article_set['last_id'];
         if (articles.length > 0 && bottomNotice) {
-            page++;
+            if(page_get === '#!self_add!#'){
+                page++;
+            }else {
+                page = page_get;
+            }
             for (let i = 0; i < articles.length; i++) {
                 article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}" ${articles[i]['collect'] ? 'collected' : ''} ${articles[i]['upvote'] ? 'upvoted' : ''}><div class="user" onclick="" style="cursor: pointer"><img class="avatar" src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo" onclick="" style="cursor: pointer"><div class="image"><div class="articleCover" style="${articles[i].cover === '' ? `background-color: rgba(var(--personal-color), 0.1)` : `background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
             }
         }
     })
-
+    console.log(page);
 }
-
-function handleScroll() {
-    /**
-     * 处理右侧面板的滚动事件（元素滚动到底时向页面添加更多文章卡片）
-     **/
-    if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight > last_scroll_size) {
-        last_scroll_size = right_element.scrollTop + right_element.clientHeight;
-        console.log('active, ' + last_scroll_size)
-        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
-        console.log('adding')
-        addArticle();
-        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
-    }
-}
-
-right_element.onscroll = handleScroll;
 
 function copy(text) {
     /**
@@ -219,7 +244,310 @@ function copy(text) {
     }, 2000)
 }
 
-window.oncontextmenu = function (e) {
+function showArticle(postId) {
+    /**
+     * 在原有页面的基础上添加一层遮罩以显示文章内容
+     **/
+    let new_overlay = document.createElement('div');
+    new_overlay.classList.add('overlay');
+    new_overlay.innerHTML += `<div class="overlay-window article-overlay"><div class="overlay-window-wrapper"><div class="overlay-window-topbar"><button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn"><i class="mdui-icon material-icons">close</i></button></div><div class='overlay-window-main'></div></div></div>`;
+    let overlay_window = new_overlay.getElementsByClassName('overlay-window-main')[0];
+    // overlay_window.innerHTML = '';
+    let article_main = document.createElement('div');
+    article_main.classList.add('article-main');
+    article_main.innerHTML = '<div class="loading"><div class="mdui-spinner mdui-spinner-colorful spinner"></div></div>'
+    let title = document.createElement('h1');
+    let release_time = document.createElement('p')
+    release_time.classList.add('release-time')
+    let quill_post = document.createElement('div');
+    quill_post.classList.add('ql-editor');
+    let article_right = document.createElement('div');
+    article_right.classList.add('article-right');
+    function renderPage(postId) {
+        apiConnect(`/api/article?post_id=${postId}&action=raw`).then((res) => {
+            let post_raw = JSON.parse(res);
+            if (post_raw['retcode'] === 0){
+                title.innerText = post_raw['data']['post']['post']['subject'];
+                console.log(parseInt(post_raw['data']['post']['post']['created_at']))
+                release_time.innerText = '发布时间：' + formatDate(new Date(parseInt(post_raw['data']['post']['post']['created_at']) * 1000), 'yyyy-MM-dd hh:mm:ss')
+                let render_type = post_raw["data"]['post']['post']['view_type'];
+                switch (render_type) {
+                    case 1:
+                        quill_post.innerHTML = HtmlUtil.htmlDecodeByRegExp(post_raw["data"]['post']['post']['content']);
+                        try {
+                            let vod_lists = post_raw["data"]["post"]["vod_list"];
+                            let resolutions = document.getElementsByName('resolution');
+                            let videoClass = document.getElementsByClassName('video');
+                            let mhyvods = document.getElementsByClassName('mhy-vod');
+                            for (let i = 0; i < vod_lists.length; i++) {
+                                mhyvods[i].innerHTML += `<video controls class="video" width="100%"></video>`;
+                                mhyvods[i].innerHTML += '<p><label for="resolution">清晰度：</label>';
+                                mhyvods[i].innerHTML += `<select name="resolution" id="resolution" class="resolution" style="width: 100px;" onchange="resolutionChange(${i})"></select></p>`;
+                                let vod_list = vod_lists[i];
+                                let cover = vod_list['cover'];
+                                let vods = vod_list['resolutions'];
+                                videoClass[i].poster = cover;
+                                let options = ''
+                                for (let j = 0;j < vods.length; j++) {
+                                    options += `<option value="${vods[j]['url']}">${vods[j]['definition']}</option>`;
+                                }
+                                resolutions[i].innerHTML = options;
+                                resolutionChange(i);
+                                videoClass[i].pause();
+                            }
+                        }catch (e) {
+                            console.log(e);
+                        }
+                        break;
+                    case 2:
+                        let res_json = JSON.parse(post_raw["data"]['post']['post']['content']);
+                        let ql_image, ql_image_box, img, para;
+                        for (let i = 0; i < res_json['imgs'].length; i++) {
+                            ql_image = document.createElement('div');
+                            ql_image_box = document.createElement('div');
+                            img = document.createElement('img');
+                            ql_image.classList.add('ql-image');
+                            ql_image_box.classList.add('ql-image-box');
+                            img.src = res_json['imgs'][i];
+                            ql_image_box.appendChild(img);
+                            ql_image.appendChild(ql_image_box);
+                            quill_post.appendChild(ql_image);
+                        }
+                        para = document.createElement('p');
+                        para.innerText = res_json.describe?res_json.describe:'';
+                        quill_post.appendChild(para);
+                        break;
+                    case 5:
+                        quill_post.innerHTML = '<div class="mhy-vod"><video controls width="100%" class="video"></video><p><label for="resolution">清晰度：</label><select name="resolution" id="resolution" style="width: 100px;"onchange="resolutionChange(0)"></select></p></div>';
+                        let vod_list = post_raw["data"]["post"]["vod_list"][0];
+                        let cover = vod_list['cover'];
+                        let vods = vod_list['resolutions'];
+                        let resolutions = document.getElementById('resolution');
+                        let videoClass = document.getElementsByClassName('video')[0];
+                        videoClass.poster = cover;
+                        for (let i = 0;i < vods.length; i++) {
+                            resolutions.options.add(new Option(vods[i]['definition'], vods[i]['url']));
+                        }
+                        resolutions.options[0].select = true;
+                        resolutionChange(0);
+                        videoClass.pause();
+                        break;
+                }
+                let author_div = document.createElement('div');
+                author_div.classList.add('author');
+                author_div.innerHTML = `<img class="avatar" src="${post_raw['data']['post']['user']['avatar_url']}"/><div class="userinfo"><div class="nickname">${post_raw['data']['post']['user']['nickname']}</div><div class="describe">${post_raw['data']['post']['user']['certification']['label'].length > 0?post_raw['data']['post']['user']['certification']['label']:post_raw['data']['post']['user']['introduce']}</div></div>`;
+                article_right.appendChild(author_div);
+                let article_comment = document.createElement('div');
+                article_comment.classList.add('article-comment');
+                article_comment.setAttribute("comment-page", "0");
+                article_comment.setAttribute("post_id", postId);
+                article_comment.setAttribute("is_last", "false");
+                article_comment.addEventListener('scroll', (e) => {
+                    let element = e.target;
+                    if (element.scrollTop + element.clientHeight >= element.scrollHeight - 1) {
+                        renderCommentsTree(element);
+                    }
+                })
+                renderCommentsTree(article_comment);
+                article_right.appendChild(article_comment);
+            }
+            else if(post_raw['retcode'] === 1034){
+                window.geetest_activated = true;
+                mdui.alert('点击继续以完成人机验证', '似乎触发了访问风控...', () =>{
+                    apiConnect('/api/validate?method=create').then((res) => {
+                        let geetest_validate = JSON.parse(res);
+                        let gt = geetest_validate.gt;
+                        let challenge = geetest_validate.challenge;
+                        initGeetest({
+                            gt: gt,
+                            challenge: challenge,
+                            new_captcha: true,
+                            product: 'bind'
+                        }, (captchaObj) => {
+                            captchaObj.onReady(function(){
+                                captchaObj.verify();
+                            }).onSuccess(function(){
+                                let result = captchaObj.getValidate();
+                                let verify_xhr = new XMLHttpRequest();
+                                verify_xhr.open('post', '/api/validate?method=verify')
+                                verify_xhr.onload = () => {
+                                    renderPage(postId);
+                                }
+                                verify_xhr.setRequestHeader('Content-Type', 'application/json')
+                                let result_send = {
+                                    geetest_challenge: result.geetest_challenge,
+                                    geetest_validate: result.geetest_validate,
+                                    geetest_seccode: result.geetest_seccode,
+                                }
+                                verify_xhr.send(JSON.stringify(result_send))
+                            }).onError(function(){
+                                mdui.alert('验证码加载失败！', '错误', () => {
+                                    load_page('reload')
+                                }, {
+                                    confirmText: '继续',
+                                })
+                            })
+                        })
+                    })
+                    load_page('reload');
+                }, {
+                    confirmText: '继续',
+                });
+            }
+            else{
+                mdui.alert(`api返回的retcode为：${post_raw['retcode']}`, '访问失败！', () =>{
+                    load_page('reload');
+                }, {
+                    confirmText: '好',
+                });
+            }
+        })
+    }
+    renderPage(postId)
+    article_main.innerHTML = '';
+    article_main.appendChild(title);
+    article_main.appendChild(release_time)
+    article_main.appendChild(quill_post);
+    overlay_window.appendChild(article_main);
+    overlay_window.appendChild(article_right);
+    new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function (e) {
+        if(window.geetest_activated){
+            load_page('reload');
+        }else{
+           let target_element = e.target;
+            do{
+                if(target_element.classList.contains('overlay')){
+                    target_element.remove();
+                    break;
+                }else {
+                    target_element = target_element.parentElement;
+                }
+            } while (target_element !== null)
+        }
+
+    })
+    new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('dblclick', function (e) {
+        e.preventDefault();
+        if(window.geetest_activated){
+            load_page('reload');
+        }else{
+            let target_element = e.target;
+            let overlays = document.getElementsByClassName('overlay')
+            for (let i = 0; i < overlays.length; i++) {
+                let current_overlay = overlays[i];
+                if(!(current_overlay.classList.contains('loading_outter'))){
+                    current_overlay.remove()
+                }
+            }
+        }
+    })
+    document.body.appendChild(new_overlay)
+}
+
+function renderCommentsTree(article_comment) {
+    // let article_comment = document.getElementsByClassName("article-comment")[0];
+    let post_id = article_comment.getAttribute("post_id");
+    let new_page = parseInt(article_comment.getAttribute("comment-page")) + 1;
+    article_comment.setAttribute("comment-page", new_page.toString())
+    let flag = article_comment.getAttribute("is_last");
+    if(flag === 'false'){
+        apiConnect(`/api/comment?post_id=${post_id}&gid=${game}&page=${new_page.toString()}`).then((res) => {
+            let result = JSON.parse(res);
+            for (let comment of result.comments) {
+                // let comment = result.comments[comment_num];
+                // console.log(comment);
+                let piece_reply = document.createElement('div');
+                piece_reply.classList.add('piece-reply');
+                piece_reply.classList.add('mdui-ripple');
+                piece_reply.classList.add('mdui-hoverable');
+                piece_reply.setAttribute("reply_id", comment.reply_id);
+                piece_reply.setAttribute("floor_id", comment.floor_id);
+                piece_reply.setAttribute("post_id", comment.post_id);
+                piece_reply.addEventListener('click', (e) => {
+                    let element = e.target;
+                    do {  //通过向上循环查找来得到鼠标右击区域范围
+                        if (element.classList.contains('piece-reply')) {
+                            break;
+                        }else {
+                            element = element.parentElement;
+                        }
+                    } while (element !== null)
+                    let post_id = element.getAttribute("post_id");
+                    let floor_id = element.getAttribute("floor_id");
+                    let reply_id = element.getAttribute("reply_id");
+                    showCommentDetail(post_id, reply_id, floor_id);
+                });
+                let reply_user = document.createElement('div');
+                reply_user.classList.add('reply-user');
+                let user_avatar = document.createElement('img');
+                user_avatar.classList.add('reply-user-avatar');
+                user_avatar.src = comment.avatar;
+                let user_nickname = document.createElement('div');
+                user_nickname.classList.add('reply-user-nickname');
+                user_nickname.innerText = comment.username;
+                reply_user.appendChild(user_avatar);
+                reply_user.appendChild(user_nickname);
+                piece_reply.appendChild(reply_user);
+                let comment_main = document.createElement('div');
+                comment_main.classList.add('comment-main');
+                comment_main.classList.add('ql-editor');
+                comment_main.innerHTML = comment.content;
+                piece_reply.appendChild(comment_main);
+                article_comment.appendChild(piece_reply);
+            }
+            if(result.is_last) {
+                article_comment.setAttribute("is_last", 'true')
+            }
+        })
+    }
+}
+
+function showCommentDetail(post_id, reply_id, floor_id) {
+    let new_overlay = document.createElement('div');
+    new_overlay.classList.add('overlay');
+    new_overlay.addEventListener('click', (e) => {
+        if(e.target.classList.contains('overlay')){
+            e.target.remove();
+        }
+    })
+    new_overlay.innerHTML = '<div class="reply-detail-window-outer"><div class="reply-detail-window"></div></div>'
+    document.body.appendChild(new_overlay)
+}
+
+function resolutionChange(i) {
+    let resolutions = document.getElementsByName('resolution');
+    let videoClass = document.getElementsByClassName('video');
+
+    let index = resolutions[i].selectedIndex;
+    let vodSrc_selected = resolutions[i].options[index].value;
+    let playTime = videoClass[i].currentTime;
+
+    videoClass[i].src = vodSrc_selected;
+    videoClass[i].load();
+
+    videoClass[i].currentTime = playTime;
+    videoClass[i].play();
+}
+
+function like(post_id, like_to="article", reply_id){
+
+}
+
+right_element.addEventListener('scroll', () => {
+    /**
+     * 处理右侧面板的滚动事件（元素滚动到底时向页面添加更多文章卡片）
+     **/
+    if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight > last_scroll_size) {
+        last_scroll_size = right_element.scrollTop + right_element.clientHeight;
+        console.log('active, ' + last_scroll_size)
+        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
+        console.log('adding')
+        addArticle();
+        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
+    }
+})
+
+window.addEventListener('contextmenu', (e) => {
     e.preventDefault();  //禁用浏览器原生右击事件
     menu.classList.remove('active');  //清除页面中所有存在的右击菜单
     account_menu.classList.remove('active');
@@ -256,13 +584,13 @@ window.oncontextmenu = function (e) {
         menu.style.top = y + 'px';
         menu.style.left = x + 'px';
         if (x > (winWidth - menuWidth - submenu.offsetWidth)) {  //处理子菜单x轴溢出
-            submenu.style.left = `-${submenu.offsetWidth + 10}px`;
+            submenu.style.left = `-${submenu.offsetWidth}px`;
         } else {
             submenu.style.left = '';
             submenu.style.right = `-${submenu.offsetWidth}px`;
         }
         if (y > (winHeight - menuHeight - submenu.offsetHeight)) {  //处理子菜单y轴溢出
-            submenu.style.top = `-${submenu.offsetHeight - 5}px`;
+            submenu.style.top = `-${submenu.offsetHeight - 15}px`;
             // submenu.style.top = `-${-winHeight + submenu.offsetHeight}px`;
         } else {
             submenu.style.top = '-35px';
@@ -307,152 +635,9 @@ window.oncontextmenu = function (e) {
         account_menu.style.left = x + 'px';
         account_menu.classList.add('active');
     }
-}
+})
 
-function showArticle(postId) {
-    /**
-     * 在原有页面的基础上添加一层遮罩以显示文章内容
-     **/
-    let new_overlay = document.createElement('div');
-    new_overlay.classList.add('overlay');
-    new_overlay.innerHTML += `<div class="overlay-window"><div class="overlay-window-wrapper"><div class="overlay-window-topbar"><button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn"><i class="mdui-icon material-icons">close</i></button></div><div class='overlay-window-main'></div></div></div>`;
-    let overlay_window = new_overlay.getElementsByClassName('overlay-window-main')[0];
-    overlay_window.innerHTML = '';
-    let article_main = document.createElement('div');
-    article_main.classList.add('article-main');
-    let title = document.createElement('h1');
-    let quill_post = document.createElement('div');
-    quill_post.classList.add('ql-editor');
-    apiConnect(`/api/article?post_id=${postId}&action=raw`).then((res) => {
-        let post_raw = JSON.parse(res);
-        title.innerText = post_raw['data']['post']['post']['subject'];
-        let render_type = post_raw["data"]['post']['post']['view_type'];
-        switch (render_type) {
-            case 1:
-                apiConnect(`/api/article?post_id=${postId}&action=content`).then((res) => {
-                    quill_post.innerHTML = HtmlUtil.htmlDecodeByRegExp(res)
-                    try {
-                        apiConnect(`/api/article?post_id=${postId}&action=video`).then((res) => {
-                            let vod_lists = JSON.parse(res);
-                            let resolutions = document.getElementsByName('resolution');
-                            let videoClass = document.getElementsByClassName('video');
-                            let mhyvods = document.getElementsByClassName('mhy-vod');
-                            for (let i = 0; i < vod_lists.length; i++) {
-                                mhyvods[i].innerHTML += `<video controls class="video" width="100%"></video>`;
-                                mhyvods[i].innerHTML += '<p><label for="resolution">清晰度：</label>';
-                                mhyvods[i].innerHTML += `<select name="resolution" id="resolution" class="resolution" style="width: 100px;" onchange="resolutionChange(${i})"></select></p>`;
-                                let vod_list = vod_lists[i];
-                                let cover = vod_list['cover'];
-                                let vods = vod_list['resolutions'];
-                                videoClass[i].poster = cover;
-                                let options = ''
-                                for (let j = 0;j < vods.length; j++) {
-                                    options += `<option value="${vods[j]['url']}">${vods[j]['definition']}</option>`;
-                                }
-                                resolutions[i].innerHTML = options;
-                                resolutionChange(i);
-                                videoClass[i].pause();
-                            }
-                        });
-                    }catch (e) {
-                        console.log(e);
-                    }
-                });
-                break;
-            case 2:
-                apiConnect(`/api/article?post_id=${postId}&action=content`).then((res) => {
-                    let res_json = JSON.parse(res)
-                    console.log(res_json)
-                    let ql_image, ql_image_box, img, para
-                    for (let i = 0; i < res_json['imgs'].length; i++) {
-                        ql_image = document.createElement('div')
-                        ql_image_box = document.createElement('div')
-                        img = document.createElement('img')
-                        ql_image.classList.add('ql-image')
-                        ql_image_box.classList.add('ql-image-box')
-                        img.src = res_json['imgs'][i]
-                        ql_image_box.appendChild(img)
-                        ql_image.appendChild(ql_image_box)
-                        quill_post.appendChild(ql_image)
-                        console.log(quill_post)
-                    }
-                    para = document.createElement('p')
-                    para.innerText = res_json.describe
-                    quill_post.appendChild(para)
-                })
-                break;
-            case 5:
-                quill_post.innerHTML = '<div class="mhy-vod"><video controls width="100%" class="video"></video><p><label for="resolution">清晰度：</label><select name="resolution" id="resolution" style="width: 100px;"onchange="resolutionChange(0)"></select></p></div>';
-                apiConnect(`/api/article?post_id=${postId}&action=video`).then((res) => {
-                let vod_list = JSON.parse(res)[0];
-                    let cover = vod_list['cover'];
-                    let vods = vod_list['resolutions'];
-                    let resolutions = document.getElementById('resolution');
-                    let videoClass = document.getElementsByClassName('video')[0];
-                    videoClass.poster = cover;
-                    for (let i = 0;i < vods.length; i++) {
-                        resolutions.options.add(new Option(vods[i]['definition'], vods[i]['url']));
-                    }
-                    resolutions.options[0].select = true;
-                    resolutionChange(0);
-                    videoClass.pause();
-                })
-                break;
-        }
-    })
-    article_main.appendChild(title)
-    article_main.appendChild(quill_post)
-    // let article_scripts = document.createElement('script')
-    // article_scripts.src = '/static/app/js/element_actions.js';
-    // article_scripts.defer = true;
-    // article_main.appendChild(article_scripts)
-    overlay_window.appendChild(article_main)
-    let article_right = document.createElement('div')
-    article_right.classList.add('article-right')
-    overlay_window.appendChild(article_right)
-
-
-    new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function (e) {
-        let target_element = e.target;
-        do{
-            if(target_element.classList.contains('overlay')){
-                target_element.remove();
-                break;
-            }else {
-                target_element = target_element.parentElement;
-            }
-        } while (target_element !== null)
-    })
-    new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('dblclick', function (e) {
-        e.preventDefault();
-        let target_element = e.target;
-        let overlays = document.getElementsByClassName('overlay')
-        for (let i = 0; i < overlays.length; i++) {
-            let current_overlay = overlays[i];
-            if(!(current_overlay.classList.contains('loading_outter'))){
-                current_overlay.remove()
-            }
-        }
-    })
-    document.body.appendChild(new_overlay)
-}
-
-function resolutionChange(i) {
-    let resolutions = document.getElementsByName('resolution');
-    let videoClass = document.getElementsByClassName('video');
-
-    let index = resolutions[i].selectedIndex;
-    let vodSrc_selected = resolutions[i].options[index].value;
-    let playTime = videoClass[i].currentTime;
-
-    videoClass[i].src = vodSrc_selected;
-    videoClass[i].load();
-
-    videoClass[i].currentTime = playTime;
-    videoClass[i].play();
-}
-
-window.addEventListener('click', function (e) {
+window.addEventListener('click', (e) => {
     /**
      * 处理点击事件
      **/
@@ -502,7 +687,25 @@ window.addEventListener('click', function (e) {
     }
 })
 
-window.onload = function (e) {
+window.addEventListener('load', (e) => {
+    /**Just for fun!**/
+    // let genshin_start = document.createElement('div')
+    // genshin_start.classList.add('overlay');
+    // genshin_start.classList.add('genshin-start-overlay')
+    // genshin_start.style.background = 'url(/static/app/res/white.png) no-repeat fixed center center'
+    // genshin_start.style.backgroundSize = 'cover'
+    // document.body.appendChild(genshin_start)
+    // setTimeout(() => {
+    //     document.getElementsByClassName('genshin-start-overlay')[0].style.background = 'url(/static/app/res/mihoyo.png) no-repeat fixed center center'
+    //     document.getElementsByClassName('genshin-start-overlay')[0].style.backgroundSize = 'cover'
+    // }, 10000)
+    // setTimeout(() => {
+    //     document.getElementsByClassName('genshin-start-overlay')[0].style.background = 'url(/static/app/res/genshin.png) no-repeat fixed center center'
+    //     document.getElementsByClassName('genshin-start-overlay')[0].style.backgroundSize = 'cover'
+    // }, 10000)
+    // setTimeout(() => {
+    //     document.getElementsByClassName('genshin-start-overlay')[0].remove()
+    // }, 10000)
     apiConnect(current_user_api).then((res) => {
         let user = JSON.parse(res);
         document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname;
@@ -551,8 +754,8 @@ window.onload = function (e) {
             }
         }
     }, (rej) => {
-        e.preventDefault()
-    })
+        e.preventDefault();
+    });
     apiConnect(game_api).then((res) => {
         let game = JSON.parse(res);
         if (game.length > 0) {
@@ -571,33 +774,64 @@ window.onload = function (e) {
     setInterval(function () {
         document.getElementsByClassName('loading_outter')[0].classList.add('disabled')
     }, 1500)
-}
+})
 
 document.getElementsByClassName("logout")[0].addEventListener('click', () => {
-    apiConnect("/api/logout").then(() => {
-        load_page('reload')
-    })
+    mdui.confirm(
+        "真的要退出登录吗？",
+        "提示",
+        () => {
+            apiConnect("/api/logout").then(() => {
+                load_page('reload')
+            })
+        },
+        () => {},
+        {
+            confirmText: "确定",
+            cancelText: "取消"
+        }
+    )
+
 })
 
 let current_window = 0;
+let new_detect = false;
 setInterval(() => {
-    let windows = document.getElementsByClassName('overlay-window')
+    let windows = document.getElementsByClassName('article-overlay')
     let detected_window = windows.length;
-    if(current_window !== detected_window){
-        if (current_window < detected_window){
-            console.log('A window had been created!')
-            let ql_images = windows[detected_window - 1].getElementsByClassName('ql-editor')[0].getElementsByClassName("ql-image-box");
-            let I_dont_know = ql_images[0].innerHTML;
+    if(current_window !== detected_window && current_window < detected_window) {
+        console.log('A window had been created!');
+        new_detect = true;
+    }else if (current_window !== detected_window && current_window > detected_window){
+        console.log('A window had been closed!');
+    }
+    if(new_detect){
+        console.log("Adding some features for the new window");
+        let ql_images = windows[detected_window - 1].getElementsByClassName('ql-editor')[0].getElementsByClassName("ql-image-box");
+        if(windows[detected_window - 1].getElementsByClassName('release-time')[0].innerText.length > 0){
+            let new_script = document.createElement('script');
+            new_script.textContent = `$(".ql-fold").click(() => {
+    $(this).toggleClass('expand');
+});`;
+            windows[detected_window - 1].getElementsByClassName('ql-editor')[0].appendChild(new_script);
+            new_detect = false;
+        }else{
+            console.log("The window is not ready now, waiting it until the page is ready!");
+        }
+        if(ql_images[0] !== undefined){
             for (let i = 0; i < ql_images.length; i++) {
                 new Viewer(ql_images[i]);
             }
-            let new_script = document.createElement('script')
-            new_script.textContent = `$(".ql-fold").click(function() {$(this).toggleClass('expand');});`
-            windows[detected_window - 1].appendChild(new_script)
-        }else {
-            console.log('A window had been closed!')
         }
-        current_window = detected_window;
     }
+    current_window = detected_window;
 }, 500)
 
+// setInterval(() => {
+//     let t = new Date().getTime();
+//     apiConnect(`/app-api/heartbeat?t=${t}`, false).then((res) => {
+//         // console.log(`Time delay: ${parseInt(JSON.parse(res)['t']) - t}ms`)
+//     }, (rej) => {
+//         mdui.alert('应用内通讯失败！')
+//     })
+// },500)

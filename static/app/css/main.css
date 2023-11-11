@@ -16,8 +16,9 @@ body{
     height: -webkit-fill-available;
     position: fixed;
     top: 50px;
-    width: 300px;
+    width: 200px;
     z-index: 999;
+    margin-top: 20px;
 }
 #topbar{
     width: 100%;
@@ -56,14 +57,18 @@ body{
     right: 0;
     top: 60px;
     height: -webkit-fill-available;
-    width: calc(100% - 300px);
+    width: calc(100% - 200px);
     border-radius: 20px 20px 0 0;
     background-color: rgba(255, 255, 255, 0.3);
     overflow: auto;
     min-width: 700px;
 }
-#right::-webkit-scrollbar {
-    display: none;
+#right::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+
+}
+#right::-webkit-scrollbar-track{
+    margin: 5px;
 }
 #right-items{
     overflow: auto;
@@ -83,12 +88,12 @@ body{
     line-height: 2.2;
 }
 .forum{
-    height: 50px;
-    margin: 10px 10px 10px 0;
-    padding: 0 10px 0 50px;
-    line-height: 3;
+    height: 30px;
+    margin: 0 10px 5px 0;
+    padding: 0 10px 0 10px;
+    line-height: 2.5;
     border-radius: 0 25px 25px 0;
-    font-size: 16px;
+    font-size: 12px;
 }
 .forum:hover:not(.selected-forum){
     background-color: rgba(128, 128, 128, 0.1);
@@ -114,6 +119,12 @@ body{
     /*color: black;*/
     background-color: rgba(var(--personal-color), 0.1);
     border-radius: 10px;
+}
+@media (max-width: 1560px) {
+    .postCard{
+        float: none;
+        margin: 10px auto;
+    }
 }
 .postCard .user{
     margin: unset !important;
@@ -156,7 +167,7 @@ body{
 .user .userinfo .describe{
     position: relative;
     top: 1px;
-    font-size: 8px;
+    font-size: 10px;
 }
 /* image */
 .image .articleCover{
@@ -210,7 +221,7 @@ body{
     z-index: 114516;
 }
 .overlay-window-topbar{
-    height: 30px;
+    height: 52px;
     padding: 10px;
 }
 .overlay-window-close-btn{
@@ -240,6 +251,13 @@ body{
     overflow-y: scroll;
     padding: 10px 10%;
 }
+.article-main::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+
+}
+.article-main::-webkit-scrollbar-track{
+    margin: 5px;
+}
 .article-main img{
     border: none !important;
 }
@@ -250,14 +268,15 @@ body{
 }
 .ql-editor{
     overflow: unset !important;
+    max-width: 600px;
+    margin: 0 auto;
 }
 .article-right{
-    float: left;
+    float: right;
     height: 100%;
     width: 40%;
-    padding: 10px;
-    background-color: yellow;
     border-radius: 5px;
+    max-width: 550px;
 }
 .menu{
     position: absolute;
@@ -271,14 +290,14 @@ body{
     /*color: #fff;*/
     color: #000;
     padding: 5px;
-    font-size: 16px;
+    font-size: 12px;
 }
 .active{
     visibility: visible;
 }
 .menu__item, .submenu__item{
-    height: 30px;
-    line-height: 2;
+    height: 20px;
+    line-height: 1.5;
     padding: 0 5px;
     border-radius: 5px;
 }
@@ -301,7 +320,13 @@ body{
     /*color: #fff;*/
     color: #000;
     padding: 5px;
-    font-size: 16px;
+    font-size: 12px;
+}
+.menu .mdui-menu-item-more{
+    width: 17px !important;
+    height: 15px !important;
+    background-size: cover;
+    margin: 0 !important;
 }
 .menu .mdui-icon{
     font-size: 18px !important;
@@ -320,32 +345,32 @@ hr{
     position: fixed;
     left: 0;
     bottom: 0;
-    height: 80px;
-    width: 280px;
+    height: 60px;
+    width: 180px;
     margin: 10px;
     background-color: rgba(var(--personal-color), 0.4);
     border-radius: 10px;
 }
 .user-avatar{
-    height: 50px;
-    width: 50px;
+    height: 40px;
+    width: 40px;
     background: white no-repeat;
     background-size: cover;
     border-radius: 50%;
     float: left;
-    margin: 15px;
+    margin: 10px;
 }
 .user-info-text{
     float: left;
-    margin-top: 15px;
-    margin-bottom: 15px;
-}
-.user-nickname{
-    font-size: 18px;
+    margin-top: 10px;
     margin-bottom: 10px;
 }
+.user-nickname, .nickname{
+    font-size: 16px;
+    margin-bottom: 2px;
+}
 .user-uid{
-    font-size: 10px;
+    font-size: 9px;
 }
 .loading_outter{
     background-color: white;
@@ -361,4 +386,103 @@ hr{
     left: 50%;
     width: 50px;
     height: 50px;
+}
+.mdui-dialog{
+    border-radius: 20px;
+}
+.mdui-btn:hover{
+    border-radius: 20px;
+}
+.mdui-dialog-actions .mdui-btn{
+    color: rgb(var(--personal-color)) !important;
+}
+.viewer-container .viewer-footer{
+    display: none !important;
+}
+.viewer-container .viewer-close{
+    border-radius: 50% !important;
+    width: 30px !important;
+    height: 30px !important;
+    right: 20px !important;
+    top: 20px !important;
+    background-color: black !important;
+}
+.viewer-container .viewer-close:before{
+    margin: -10px !important;
+}
+.viewer-container .viewer-tooltip{
+    display: none !important;
+}
+.author{
+    background-color: rgba(var(--personal-color), 0.3);
+    width: calc(100% - 10px);
+    height: 80px;
+    padding: 5px;
+    border-radius: 5px;
+    margin: 0 0 10px 10px;
+}
+.author .avatar, .reply-user-avatar{
+    border-radius: 50%;
+    width: 60px;
+    height: 60px;
+    float: left;
+    background-color: white;
+    margin: 5px;
+}
+.author .userinfo{
+    margin: 5px 5px 5px 80px;
+}
+.author .describe{
+    font-size: 10px;
+}
+.article-comment{
+    width: calc(100% - 10px);
+    height: calc(100% - 90px);
+    border-radius: 5px;
+    background-color: rgba(var(--personal-color), 0.5);
+    margin: 0 0 0 10px;
+    overflow: auto;
+}
+.article-comment::-webkit-scrollbar-thumb {
+    border-radius: 10px;
+
+}
+.article-comment::-webkit-scrollbar-track{
+    margin: 5px;
+}
+.piece-reply{
+    width: calc(100% - 20px);
+    /*height: 500px;*/
+    border-radius: 5px;
+    background-color: rgba(var(--personal-color), 0.5);
+    margin: 10px;
+}
+.piece-reply .reply-user-avatar{
+    width: 40px;
+    height: 40px;
+    margin: 0;
+}
+.piece-reply .reply-user{
+    height: 60px;
+    padding: 10px;
+}
+.piece-reply .reply-user-nickname {
+    margin-left: 50px;
+}
+.reply-detail-window-outer{
+    width: 60%;
+    height: 80%;
+    margin: 5% auto;
+    background-color: white;
+    border-radius: 10px;
+}
+.reply-detail-window{
+    width: 100%;
+    height: 100%;
+    background-color: rgba(var(--personal-color), 0.5);
+    border-radius: 10px;
+}
+.release-time {
+    text-align: left;
+    font-size: 12px;
 }

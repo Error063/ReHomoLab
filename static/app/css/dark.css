@@ -24,3 +24,10 @@ body{
     color: #fff !important;
     background: #323232 !important;
 }
+.mdui-dialog{
+    color: #fff !important;
+    background-color: #323232 !important;
+}
+.mdui-dialog-content{
+    color: #fff !important;
+}
