@@ -204,20 +204,39 @@ body{
     background-color: rgba(0, 0, 0, 0.5);
     z-index: 2000;
 }
-.overlay-window{
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+/*.overlay-window{*/
+/*    position: fixed;*/
+/*    top: 0;*/
+/*    left: 0;*/
+/*    width: 100%;*/
+/*    height: 100%;*/
+/*    background-color: white;*/
+/*    z-index: 2001;*/
+/*    !*border-radius: 20px;*!*/
+/*}*/
+.overlay-window {
+    /* position: fixed; */
+    /*top: 5px;*/
+    /*left: 5px;*/
+    width: calc(100% - 10px);
+    height: calc(100% - 10px);
+    max-width: 1420px;
+    max-height: 960px;
     background-color: white;
+    margin: 5px auto;
     z-index: 2001;
-    /*border-radius: 20px;*/
+    border-radius: 5px;
+}
+@media (height > 960px) {
+    .overlay-window {
+        margin: 1.7% auto;
+    }
 }
 .overlay-window-wrapper{
     background-color: rgba(var(--personal-color), 0.3);
     width: 100%;
     height: 100%;
+    border-radius: 5px;
     z-index: 114516;
 }
 .overlay-window-topbar{
@@ -263,8 +282,14 @@ body{
 }
 .mhy-vod {
     width: 100%;
-    height: 338px;
+    height: fit-content;
     border: none;
+    background-color: rgb(var(--personal-color));
+    padding: 10px;
+    border-radius: 5px;
+}
+.mhy-vod video{
+    border-radius: 5px;
 }
 .ql-editor{
     overflow: unset !important;
@@ -435,9 +460,24 @@ hr{
 .author .describe{
     font-size: 10px;
 }
+.article-actions{
+    width: calc(100% - 10px);
+    height: 40px;
+    margin: 10px;
+    background-color: rgba(var(--personal-color), 0.6);
+    border-radius: 5px;
+}
+.article-actions .article-like, .article-actions .article-collect, .article-actions .article-replies{
+    float: left;
+    margin-left: 10px;
+}
+.article-actions .reply-rank{
+    float: right;
+    margin-right: 10px;
+}
 .article-comment{
     width: calc(100% - 10px);
-    height: calc(100% - 90px);
+    height: calc(100% - 90px - 50px);
     border-radius: 5px;
     background-color: rgba(var(--personal-color), 0.5);
     margin: 0 0 0 10px;
@@ -449,6 +489,9 @@ hr{
 }
 .article-comment::-webkit-scrollbar-track{
     margin: 5px;
+}
+.mdui-select-menu-item[selected]{
+    color: rgb(var(--personal-color)) !important;
 }
 .piece-reply{
     width: calc(100% - 20px);
@@ -472,7 +515,8 @@ hr{
 .reply-detail-window-outer{
     width: 60%;
     height: 80%;
-    margin: 5% auto;
+    max-width: 1000px;
+    margin: 3% auto;
     background-color: white;
     border-radius: 10px;
 }
@@ -485,4 +529,11 @@ hr{
 .release-time {
     text-align: left;
     font-size: 12px;
+}
+.ql-fold{
+    color: black !important;
+}
+.mdui-select-menu{
+    border-radius: 10px;
+
 }

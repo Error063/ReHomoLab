@@ -18,6 +18,8 @@ if os.path.exists('./_internal'):
 else:
     path_prefix = './'
 
+replace_list = [[r'<a href="https://(?:www\.miyoushe|bbs\.mihoyo|m\.miyoushe)\.com/.+?/article/(\d+)".+?target="_blank"', '<a onclick=showArticle({}) ']]
+
 
 def verify_ua(function):
     @wraps(function)
@@ -147,7 +149,7 @@ def api(actions):
         case 'article':
             post_id = request.args.get('post_id')
             article_action = request.args.get('action', 'raw')
-            article = bbs.Article(post_id)
+            article = bbs.Article(post_id, replace_list)
             match article_action:
                 case 'raw':
                     return article.result
@@ -158,12 +160,21 @@ def api(actions):
             page_id = request.args.get('post_id')
             gid = request.args.get('gid')
             page = request.args.get('page', '1')
+            rank_by = request.args.get('rank_by', 'hot')
             if not gid.isdigit():
                 gid = str(bbs.getGame(gid)[1])
-            comment = bbs.Comments(page_id, gid, page)
+            match rank_by:
+                case 'earliest':
+                    comment = bbs.Comments(page_id, gid, page, orderby=1, rank_by_hot=False)
+                case 'latest':
+                    comment = bbs.Comments(page_id, gid, page, orderby=2, rank_by_hot=False)
+                case 'master':
+                    comment = bbs.Comments(page_id, gid, page, only_master=True, rank_by_hot=False)
+                case _:
+                    comment = bbs.Comments(page_id, gid, page, rank_by_hot=True)
             return {
                 'comments': comment.comments,
-                'isLast': comment.isLastFlag
+                'is_last': comment.isLastFlag
             }
             # pass
 
@@ -189,7 +200,9 @@ def api(actions):
 def app_api(actions):
     match actions:
         case 'app_config':
-            return {'version': base.app_version, 'cloud_conn': True}
+            config = {'version': base.app_version, 'cloud_conn': True, 'demo_mode': True, 'first_open': base.first_open, 'color_mode': color_mode}
+            base.first_open = False
+            return config
         case 'heartbeat':
             return {'t': int(time.time() * 1000)}
         case 'connection_test':

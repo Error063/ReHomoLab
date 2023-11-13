@@ -1,4 +1,4 @@
-console.log(`===================================================\nRe: HoMoLab   ----   By Error063\n===================================================\njs init at ${new Date().toString()}`);
+console.log(`===================================================\nRe: HoMoLab   ----   By Error063\n===================================================\nApp init at ${new Date().toString()}.`);
 
 let page_api;
 let forum_api;
@@ -17,6 +17,11 @@ let page = '';
 let last_scroll_size = 0;
 let bottomNotice = true;
 let game = location.href.split('/').slice(3)[0];
+let current_window = 0;
+let new_detect = false;
+let is_login = false;
+let app_config;
+let locks = {postcard_render: false, comment_render: false}
 window.geetest_activated = false;
 
 document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
@@ -205,22 +210,31 @@ function addArticle() {
     /**
      * 向页面添加一组文章卡片
      **/
-    apiConnect(page_api + `&page=${page}`).then((res) => {
-        let article_set = JSON.parse(res);
-        let articles = article_set['articles'];
-        let page_get = article_set['last_id'];
-        if (articles.length > 0 && bottomNotice) {
-            if(page_get === '#!self_add!#'){
-                page++;
-            }else {
-                page = page_get;
-            }
-            for (let i = 0; i < articles.length; i++) {
-                article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}" ${articles[i]['collect'] ? 'collected' : ''} ${articles[i]['upvote'] ? 'upvoted' : ''}><div class="user" onclick="" style="cursor: pointer"><img class="avatar" src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo" onclick="" style="cursor: pointer"><div class="image"><div class="articleCover" style="${articles[i].cover === '' ? `background-color: rgba(var(--personal-color), 0.1)` : `background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
-            }
+    if(locks.postcard_render){
+        console.log('Cannot add more post cards because the previous action is not finished!');
+    }else{
+        locks.postcard_render = true
+        for(let i=0; i<2; i++){
+            apiConnect(page_api + `&page=${page}`).then((res) => {
+                let article_set = JSON.parse(res);
+                let articles = article_set['articles'];
+                let page_get = article_set['last_id'];
+                if (articles.length > 0 && bottomNotice) {
+                    if(page_get === '#!self_add!#'){
+                        page++;
+                    }else {
+                        page = page_get;
+                    }
+                    for (let i = 0; i < articles.length; i++) {
+                        article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}" ${articles[i]['collect'] ? 'collected' : ''} ${articles[i]['upvote'] ? 'upvoted' : ''}><div class="user" onclick="" style="cursor: pointer"><img class="avatar" src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo" onclick="" style="cursor: pointer"><div class="image"><div class="articleCover" style="${articles[i].cover === '' ? `background-color: rgba(var(--personal-color), 0.1)` : `background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
+                    }
+                }
+            })
         }
-    })
-    console.log(page);
+        locks.postcard_render = false
+    }
+
+
 }
 
 function copy(text) {
@@ -248,6 +262,10 @@ function showArticle(postId) {
     /**
      * 在原有页面的基础上添加一层遮罩以显示文章内容
      **/
+    if(new_detect){
+        console.log('Cannot append the new article window because the previous window is not ready or interrupted!')
+        return undefined;
+    }
     let new_overlay = document.createElement('div');
     new_overlay.classList.add('overlay');
     new_overlay.innerHTML += `<div class="overlay-window article-overlay"><div class="overlay-window-wrapper"><div class="overlay-window-topbar"><button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn"><i class="mdui-icon material-icons">close</i></button></div><div class='overlay-window-main'></div></div></div>`;
@@ -268,7 +286,6 @@ function showArticle(postId) {
             let post_raw = JSON.parse(res);
             if (post_raw['retcode'] === 0){
                 title.innerText = post_raw['data']['post']['post']['subject'];
-                console.log(parseInt(post_raw['data']['post']['post']['created_at']))
                 release_time.innerText = '发布时间：' + formatDate(new Date(parseInt(post_raw['data']['post']['post']['created_at']) * 1000), 'yyyy-MM-dd hh:mm:ss')
                 let render_type = post_raw["data"]['post']['post']['view_type'];
                 switch (render_type) {
@@ -318,7 +335,8 @@ function showArticle(postId) {
                         quill_post.appendChild(para);
                         break;
                     case 5:
-                        quill_post.innerHTML = '<div class="mhy-vod"><video controls width="100%" class="video"></video><p><label for="resolution">清晰度：</label><select name="resolution" id="resolution" style="width: 100px;"onchange="resolutionChange(0)"></select></p></div>';
+                        let desc_content = post_raw["data"]["post"]['post']["content"];
+                        quill_post.innerHTML = `<div class="mhy-vod"><video controls width="100%" class="video"></video><p><label for="resolution">清晰度：</label><select name="resolution" id="resolution" style="width: 100px;" onchange="resolutionChange(0)"></select></p></div><p>${desc_content.replaceAll('\n', '</p><p>')}</p>`;
                         let vod_list = post_raw["data"]["post"]["vod_list"][0];
                         let cover = vod_list['cover'];
                         let vods = vod_list['resolutions'];
@@ -329,6 +347,7 @@ function showArticle(postId) {
                             resolutions.options.add(new Option(vods[i]['definition'], vods[i]['url']));
                         }
                         resolutions.options[0].select = true;
+                        new mdui.Select(resolutions);
                         resolutionChange(0);
                         videoClass.pause();
                         break;
@@ -337,14 +356,85 @@ function showArticle(postId) {
                 author_div.classList.add('author');
                 author_div.innerHTML = `<img class="avatar" src="${post_raw['data']['post']['user']['avatar_url']}"/><div class="userinfo"><div class="nickname">${post_raw['data']['post']['user']['nickname']}</div><div class="describe">${post_raw['data']['post']['user']['certification']['label'].length > 0?post_raw['data']['post']['user']['certification']['label']:post_raw['data']['post']['user']['introduce']}</div></div>`;
                 article_right.appendChild(author_div);
+
+                let article_actions = document.createElement('div');
+                article_actions.classList.add('article-actions');
+
+                let like = document.createElement('div');
+                like.classList.add('article-like');
+                let like_btn = document.createElement('button');
+                like_btn.classList.add('mdui-btn');
+                like_btn.classList.add('mdui-btn-icon');
+                like_btn.classList.add('mdui-ripple');
+                like_btn.innerHTML = '<i class="mdui-icon material-icons">thumb_up</i>';
+                if(parseInt(post_raw['data']['post']['self_operation']['attitude']) !== 0){
+                    like_btn.style.color = 'yellow';
+                }
+                like.appendChild(like_btn);
+                let like_num = document.createElement('span');
+                like_num.textContent = post_raw['data']['post']['stat']['like_num'];
+                like.appendChild(like_num);
+                article_actions.appendChild(like)
+
+                let collect = document.createElement('div');
+                collect.classList.add('article-collect');
+                let collect_btn = document.createElement('button');
+                collect_btn.classList.add('mdui-btn');
+                collect_btn.classList.add('mdui-btn-icon');
+                collect_btn.classList.add('mdui-ripple');
+                collect_btn.innerHTML = '<i class="mdui-icon material-icons">star</i>';
+                if(post_raw['data']['post']['self_operation']['is_collected']){
+                    collect_btn.style.color = 'yellow';
+                }
+                collect.appendChild(collect_btn);
+                let collect_num = document.createElement('span');
+                collect_num.textContent = post_raw['data']['post']['stat']['bookmark_num'];
+                collect.appendChild(collect_num);
+                article_actions.appendChild(collect);
+
+                let reply = document.createElement('div');
+                reply.classList.add('article-replies');
+                let reply_btn = document.createElement('button');
+                reply_btn.classList.add('mdui-btn');
+                reply_btn.classList.add('mdui-btn-icon');
+                reply_btn.classList.add('mdui-ripple');
+                reply_btn.innerHTML = '<i class="mdui-icon material-icons">mode_comment</i>';
+                reply.appendChild(reply_btn)
+                let reply_num = document.createElement('span');
+                reply_num.textContent = post_raw['data']['post']['stat']['reply_num'];
+                reply.appendChild(reply_num);
+                article_actions.appendChild(reply);
+
+                let reply_rank = document.createElement('select');
+                reply_rank.classList.add('reply-rank')
+                reply_rank.innerHTML += '<option value="hot">按热度排序</option>'
+                reply_rank.innerHTML += '<option value="earliest">按最早发布时间排序</option>'
+                reply_rank.innerHTML += '<option value="latest">按最晚发布时间排序</option>'
+                reply_rank.innerHTML += '<option value="master">只看楼主</option>'
+                article_actions.appendChild(reply_rank);
+                new mdui.Select(reply_rank);
+                reply_rank.addEventListener('change', (e) => {
+                    let target = e.target;
+                    let aimed_comment = target.parentElement.parentElement.getElementsByClassName('article-comment')[0];
+                    aimed_comment.innerHTML = '';
+                    aimed_comment.setAttribute('rank_by', target.options[target.selectedIndex].value)
+                    article_comment.setAttribute("comment-page", "0");
+                    article_comment.setAttribute("is_last", 'false');
+                    locks.comment_render = false;
+                    renderCommentsTree(aimed_comment);
+                });
+                article_right.appendChild(article_actions);
+
                 let article_comment = document.createElement('div');
                 article_comment.classList.add('article-comment');
+
                 article_comment.setAttribute("comment-page", "0");
                 article_comment.setAttribute("post_id", postId);
                 article_comment.setAttribute("is_last", "false");
+                article_comment.setAttribute("rank_by", "hot");
                 article_comment.addEventListener('scroll', (e) => {
                     let element = e.target;
-                    if (element.scrollTop + element.clientHeight >= element.scrollHeight - 1) {
+                    if (-100 <= element.scrollTop + element.clientHeight - element.scrollHeight && element.scrollTop + element.clientHeight - element.scrollHeight <= -90) {
                         renderCommentsTree(element);
                     }
                 })
@@ -356,11 +446,9 @@ function showArticle(postId) {
                 mdui.alert('点击继续以完成人机验证', '似乎触发了访问风控...', () =>{
                     apiConnect('/api/validate?method=create').then((res) => {
                         let geetest_validate = JSON.parse(res);
-                        let gt = geetest_validate.gt;
-                        let challenge = geetest_validate.challenge;
                         initGeetest({
-                            gt: gt,
-                            challenge: challenge,
+                            gt: geetest_validate.gt,
+                            challenge: geetest_validate.challenge,
                             new_captcha: true,
                             product: 'bind'
                         }, (captchaObj) => {
@@ -410,6 +498,11 @@ function showArticle(postId) {
     article_main.appendChild(quill_post);
     overlay_window.appendChild(article_main);
     overlay_window.appendChild(article_right);
+    new_overlay.addEventListener('click', (e) => {
+        if(e.target.classList.contains('overlay')){
+            e.target.remove();
+        }
+    })
     new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function (e) {
         if(window.geetest_activated){
             load_page('reload');
@@ -445,61 +538,85 @@ function showArticle(postId) {
 }
 
 function renderCommentsTree(article_comment) {
-    // let article_comment = document.getElementsByClassName("article-comment")[0];
-    let post_id = article_comment.getAttribute("post_id");
-    let new_page = parseInt(article_comment.getAttribute("comment-page")) + 1;
-    article_comment.setAttribute("comment-page", new_page.toString())
-    let flag = article_comment.getAttribute("is_last");
-    if(flag === 'false'){
-        apiConnect(`/api/comment?post_id=${post_id}&gid=${game}&page=${new_page.toString()}`).then((res) => {
-            let result = JSON.parse(res);
-            for (let comment of result.comments) {
-                // let comment = result.comments[comment_num];
-                // console.log(comment);
-                let piece_reply = document.createElement('div');
-                piece_reply.classList.add('piece-reply');
-                piece_reply.classList.add('mdui-ripple');
-                piece_reply.classList.add('mdui-hoverable');
-                piece_reply.setAttribute("reply_id", comment.reply_id);
-                piece_reply.setAttribute("floor_id", comment.floor_id);
-                piece_reply.setAttribute("post_id", comment.post_id);
-                piece_reply.addEventListener('click', (e) => {
-                    let element = e.target;
-                    do {  //通过向上循环查找来得到鼠标右击区域范围
-                        if (element.classList.contains('piece-reply')) {
-                            break;
-                        }else {
-                            element = element.parentElement;
+    if(locks.comment_render){
+        console.log('Cannot add more comments because the previous action is not finished!');
+    }else{
+        locks.comment_render = true;
+        let post_id = article_comment.getAttribute("post_id");
+        let rank_by = article_comment.getAttribute("rank_by");
+        let new_page = parseInt(article_comment.getAttribute("comment-page")) + 1;
+        article_comment.setAttribute("comment-page", new_page.toString())
+        let flag = article_comment.getAttribute("is_last");
+        if(flag === 'false'){
+            apiConnect(`/api/comment?post_id=${post_id}&gid=${game}&page=${new_page.toString()}&rank_by=${rank_by}`).then((res) => {
+                let result = JSON.parse(res);
+                for (let comment of result.comments) {
+                    let piece_reply = document.createElement('div');
+                    piece_reply.classList.add('piece-reply');
+                    piece_reply.classList.add('mdui-ripple');
+                    piece_reply.classList.add('mdui-hoverable');
+                    piece_reply.setAttribute("reply_id", comment.reply_id);
+                    piece_reply.setAttribute("floor_id", comment.floor_id);
+                    piece_reply.setAttribute("post_id", comment.post_id);
+                    piece_reply.addEventListener('click', (e) => {
+                        let element = e.target;
+                        let flag = false;
+                        do {  //通过向上循环查找来得到鼠标右击区域范围
+                            if (element.classList.contains('piece-reply')) {
+                                flag = true;
+                                break;
+                            }else if(element.tagName.toString().toLowerCase() === 'img'){
+                                break;
+                            }
+                            else {
+                                element = element.parentElement;
+                            }
+                        } while (element !== null)
+                        if(flag){
+                            let post_id = element.getAttribute("post_id");
+                            let floor_id = element.getAttribute("floor_id");
+                            let reply_id = element.getAttribute("reply_id");
+                            showCommentDetail(post_id, reply_id, floor_id);
                         }
-                    } while (element !== null)
-                    let post_id = element.getAttribute("post_id");
-                    let floor_id = element.getAttribute("floor_id");
-                    let reply_id = element.getAttribute("reply_id");
-                    showCommentDetail(post_id, reply_id, floor_id);
-                });
-                let reply_user = document.createElement('div');
-                reply_user.classList.add('reply-user');
-                let user_avatar = document.createElement('img');
-                user_avatar.classList.add('reply-user-avatar');
-                user_avatar.src = comment.avatar;
-                let user_nickname = document.createElement('div');
-                user_nickname.classList.add('reply-user-nickname');
-                user_nickname.innerText = comment.username;
-                reply_user.appendChild(user_avatar);
-                reply_user.appendChild(user_nickname);
-                piece_reply.appendChild(reply_user);
-                let comment_main = document.createElement('div');
-                comment_main.classList.add('comment-main');
-                comment_main.classList.add('ql-editor');
-                comment_main.innerHTML = comment.content;
-                piece_reply.appendChild(comment_main);
-                article_comment.appendChild(piece_reply);
-            }
-            if(result.is_last) {
-                article_comment.setAttribute("is_last", 'true')
-            }
-        })
+
+                    });
+                    let reply_user = document.createElement('div');
+                    reply_user.classList.add('reply-user');
+                    let user_avatar = document.createElement('img');
+                    user_avatar.classList.add('reply-user-avatar');
+                    user_avatar.src = comment.avatar;
+                    let user_nickname = document.createElement('div');
+                    user_nickname.classList.add('reply-user-nickname');
+                    user_nickname.innerText = comment.username;
+                    reply_user.appendChild(user_avatar);
+                    reply_user.appendChild(user_nickname);
+                    piece_reply.appendChild(reply_user);
+                    let comment_main = document.createElement('div');
+                    comment_main.classList.add('comment-main');
+                    comment_main.classList.add('ql-editor');
+                    comment_main.innerHTML = comment.content;
+                    for (const commentMainElement of comment_main.getElementsByTagName('img')) {
+                        if(commentMainElement.classList.contains('emoticon-image')){
+                            continue;
+                        }
+                        new Viewer(commentMainElement);
+                    }
+                    piece_reply.appendChild(comment_main);
+                    article_comment.appendChild(piece_reply);
+                }
+                if(result.is_last || result.comments.length === 0) {
+                    let piece_reply = document.createElement('div');
+                    piece_reply.classList.add('piece-reply');
+                    piece_reply.innerHTML = "<p style='text-align: center;line-height: 2.5;'>没有更多了</p>";
+                    article_comment.appendChild(piece_reply);
+                    piece_reply.style.height = '40px'
+                    article_comment.setAttribute("is_last", 'true')
+                }
+            })
+        }
+        locks.comment_render = false;
     }
+
 }
 
 function showCommentDetail(post_id, reply_id, floor_id) {
@@ -532,20 +649,22 @@ function resolutionChange(i) {
 function like(post_id, like_to="article", reply_id){
 
 }
-
+let old_value = -1;
 right_element.addEventListener('scroll', () => {
     /**
      * 处理右侧面板的滚动事件（元素滚动到底时向页面添加更多文章卡片）
      **/
-    if (right_element.scrollTop + right_element.clientHeight >= right_element.scrollHeight - 1 && right_element.scrollTop + right_element.clientHeight > last_scroll_size) {
-        last_scroll_size = right_element.scrollTop + right_element.clientHeight;
-        console.log('active, ' + last_scroll_size)
-        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
-        console.log('adding')
-        addArticle();
-        document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
+    if(Math.round(right_element.scrollTop + right_element.clientHeight - right_element.scrollHeight) >= 0){
+        old_value = Math.round(right_element.scrollTop + right_element.clientHeight - right_element.scrollHeight);
     }
 })
+
+setInterval(() => {
+    if(old_value >= 0){
+        addArticle();
+        old_value = -1;
+    }
+}, 300)
 
 window.addEventListener('contextmenu', (e) => {
     e.preventDefault();  //禁用浏览器原生右击事件
@@ -656,6 +775,10 @@ window.addEventListener('click', (e) => {
             flag = true;
             type = 'user-info';
             break;
+        }else if (element.classList.contains('ql-fold')) {
+            flag = true;
+            type = 'ql-fold';
+            break;
         } else {
             element = element.parentElement;
         }
@@ -668,7 +791,9 @@ window.addEventListener('click', (e) => {
             showArticle(post_id);
             break;
         case "user-info":
-            if(!('login' in element.attributes)){
+            if(app_config.demo_mode){
+                mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
+            }else if(!is_login){
                 console.log("not login")
                 apiConnect('/api/login').then(() => {})
                 setInterval(() => {
@@ -682,35 +807,34 @@ window.addEventListener('click', (e) => {
                 }, 500)
             }
             break;
+        case 'ql-fold':
+            $(element).toggleClass('expand');
+            break;
         default:
             break;
     }
 })
 
 window.addEventListener('load', (e) => {
-    /**Just for fun!**/
-    // let genshin_start = document.createElement('div')
-    // genshin_start.classList.add('overlay');
-    // genshin_start.classList.add('genshin-start-overlay')
-    // genshin_start.style.background = 'url(/static/app/res/white.png) no-repeat fixed center center'
-    // genshin_start.style.backgroundSize = 'cover'
-    // document.body.appendChild(genshin_start)
-    // setTimeout(() => {
-    //     document.getElementsByClassName('genshin-start-overlay')[0].style.background = 'url(/static/app/res/mihoyo.png) no-repeat fixed center center'
-    //     document.getElementsByClassName('genshin-start-overlay')[0].style.backgroundSize = 'cover'
-    // }, 10000)
-    // setTimeout(() => {
-    //     document.getElementsByClassName('genshin-start-overlay')[0].style.background = 'url(/static/app/res/genshin.png) no-repeat fixed center center'
-    //     document.getElementsByClassName('genshin-start-overlay')[0].style.backgroundSize = 'cover'
-    // }, 10000)
-    // setTimeout(() => {
-    //     document.getElementsByClassName('genshin-start-overlay')[0].remove()
-    // }, 10000)
+    apiConnect('/app-api/app_config').then((res) => {
+        app_config = JSON.parse(res)
+        console.log(`The current app version is ${app_config.version}`)
+        switch (app_config.color_mode) {
+            case 'auto':
+                document.body.classList.add('mdui-theme-layout-auto');
+                break;
+            case 'dark':
+                document.body.classList.add('mdui-theme-layout-dark');
+                break;
+        }
+    })
+
     apiConnect(current_user_api).then((res) => {
         let user = JSON.parse(res);
         document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname;
         document.getElementsByClassName('user-uid')[0].innerHTML = 'UID: ' + user.uid;
         document.getElementsByClassName('user-avatar')[0].setAttribute('style', `background-image: url('${user.avatar}');`);
+        is_login = user.isLogin;
         if (user.isLogin) {
             document.getElementsByClassName('user-info')[0].setAttribute('login', '')
         }
@@ -777,25 +901,28 @@ window.addEventListener('load', (e) => {
 })
 
 document.getElementsByClassName("logout")[0].addEventListener('click', () => {
-    mdui.confirm(
-        "真的要退出登录吗？",
-        "提示",
-        () => {
-            apiConnect("/api/logout").then(() => {
-                load_page('reload')
-            })
-        },
-        () => {},
-        {
-            confirmText: "确定",
-            cancelText: "取消"
-        }
-    )
+    if(app_config.demo_mode){
+        mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
+    }else{
+        mdui.confirm(
+            "真的要退出登录吗？",
+            "提示",
+            () => {
+                apiConnect("/api/logout").then(() => {
+                    load_page('reload')
+                })
+            },
+            () => {},
+            {
+                confirmText: "确定",
+                cancelText: "取消"
+            }
+        )
+    }
+
 
 })
 
-let current_window = 0;
-let new_detect = false;
 setInterval(() => {
     let windows = document.getElementsByClassName('article-overlay')
     let detected_window = windows.length;
@@ -804,25 +931,24 @@ setInterval(() => {
         new_detect = true;
     }else if (current_window !== detected_window && current_window > detected_window){
         console.log('A window had been closed!');
+        new_detect = false;
     }
     if(new_detect){
-        console.log("Adding some features for the new window");
+        console.log("Trying to add some features for the new window");
         let ql_images = windows[detected_window - 1].getElementsByClassName('ql-editor')[0].getElementsByClassName("ql-image-box");
         if(windows[detected_window - 1].getElementsByClassName('release-time')[0].innerText.length > 0){
-            let new_script = document.createElement('script');
-            new_script.textContent = `$(".ql-fold").click(() => {
-    $(this).toggleClass('expand');
-});`;
-            windows[detected_window - 1].getElementsByClassName('ql-editor')[0].appendChild(new_script);
+            if(ql_images[0] !== undefined){
+                for (let i = 0; i < ql_images.length; i++) {
+                    new Viewer(ql_images[i]);
+                }
+            }
             new_detect = false;
+            console.log('Added successfully')
         }else{
             console.log("The window is not ready now, waiting it until the page is ready!");
         }
-        if(ql_images[0] !== undefined){
-            for (let i = 0; i < ql_images.length; i++) {
-                new Viewer(ql_images[i]);
-            }
-        }
+
+
     }
     current_window = detected_window;
 }, 500)

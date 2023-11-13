@@ -98,7 +98,7 @@ close_now = False
 
 def openWindow():
     if len(webview.windows) == 0:
-        webview.create_window('Re: HoMoLab', app, min_size=(1200, 800))
+        webview.create_window('Re: HoMoLab', app, min_size=(1400, 800))
 
 
 def kill_self(icon_in):

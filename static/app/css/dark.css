@@ -1,5 +1,5 @@
-body{
-    background-color: black !important;
+body:not(.ql-fold){
+    background-color: rgba(0,0,0,0.9) !important;
     color: white !important;
 }
 #right{

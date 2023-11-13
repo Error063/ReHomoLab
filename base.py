@@ -8,6 +8,7 @@ if platform.system() == 'Windows':
 
 user_agent = f"HoMoLab/114.514 (Authcode: {''.join((''.join(random.sample(string.digits + string.ascii_letters, 32))).lower())})"
 app_version = '0.0.1'
+first_open = True
 
 
 def systemColorSet():
