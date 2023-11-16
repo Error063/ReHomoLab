@@ -9,8 +9,14 @@ app_config = os.path.join(config_dir, 'app.json')
 
 app_config_template = {
     'desc': '',
-    'config': {'cloud_conn': True, 'demo_mode': False, 'color_mode': 'auto', 'accept_agreement': False,
-               'enable_debug': False, 'default_area': 'ys', 'daily_note_time_delay': 300}
+    'config': {
+        'demo_mode': False,
+        'color_mode': 'auto',
+        'accept_agreement': False,
+        'enable_debug': False,
+        'default_area': 'ys',
+        'daily_note_time_delay': 300
+    }
 }
 
 if not os.path.exists(config_dir):
