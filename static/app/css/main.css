@@ -1,6 +1,7 @@
 @import url(/dynamic_css);
 body{
     background-color: rgba(var(--personal-color), 0.3);
+    overflow: hidden;
 }
 .main-body{
     overflow: hidden;
@@ -307,7 +308,6 @@ body{
     position: absolute;
     top: 0;
     left: 0;
-    /*background: #323232;*/
     background: whitesmoke;
     border-radius: 10px;
     visibility: hidden;

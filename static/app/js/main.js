@@ -791,7 +791,7 @@ window.addEventListener('click', (e) => {
             showArticle(post_id);
             break;
         case "user-info":
-            if(app_config.demo_mode){
+            if(app_config.local_config.demo_mode){
                 mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
             }else if(!is_login){
                 console.log("not login")
@@ -819,7 +819,7 @@ window.addEventListener('load', (e) => {
     apiConnect('/app-api/app_config').then((res) => {
         app_config = JSON.parse(res)
         console.log(`The current app version is ${app_config.version}`)
-        switch (app_config.color_mode) {
+        switch (app_config.local_config.color_mode) {
             case 'auto':
                 document.body.classList.add('mdui-theme-layout-auto');
                 break;
@@ -901,7 +901,7 @@ window.addEventListener('load', (e) => {
 })
 
 document.getElementsByClassName("logout")[0].addEventListener('click', () => {
-    if(app_config.demo_mode){
+    if(app_config.local_config.demo_mode){
         mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
     }else{
         mdui.confirm(

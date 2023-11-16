@@ -2,6 +2,12 @@ import platform
 import random
 import string
 
+import libmiyoushe
+from libmiyoushe import bbs, auth
+from libmiyoushe import base as lib_base
+
+libmiyoushe.account_file = r"C:\Users\czn20\.libhyperion\configs\accounts.json"
+
 
 if platform.system() == 'Windows':
     import winreg

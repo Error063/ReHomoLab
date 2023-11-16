@@ -1,0 +1,1 @@
+pyinstaller -w -i "./static/appicon.ico" "./launcher.py"

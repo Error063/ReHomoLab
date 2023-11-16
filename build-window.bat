@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onedir --windowed --icon "./static/appicon.ico" --name "HoMoLab" --add-data "./static;static/" --add-data "./templates;templates/"  "./app.py"

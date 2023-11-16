@@ -1,0 +1,1 @@
+pyinstaller --noconfirm --onedir --console --icon "./static/appicon.ico" --name "HoMoLab-console" --add-data "./static;static/" --add-data "./templates;templates/"  "./app.py"

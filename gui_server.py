@@ -4,14 +4,14 @@ import time
 from functools import wraps
 
 from flask import Flask, render_template, jsonify, request, redirect, make_response
-from libmiyoushe import bbs, auth
-from libmiyoushe import base as lib_base
+
+import app_config
+from base import bbs, auth
+from base import lib_base
 
 import base
 
 app = Flask(__name__)
-
-color_mode = 'auto'
 
 if os.path.exists('./_internal'):
     path_prefix = './_internal/'
@@ -21,11 +21,16 @@ else:
 replace_list = [[r'<a href="https://(?:www\.miyoushe|bbs\.mihoyo|m\.miyoushe)\.com/.+?/article/(\d+)".+?target="_blank"', '<a onclick=showArticle({}) ']]
 
 
-def verify_ua(function):
+def verify_ua(function, agreement_bypass=False):
     @wraps(function)
     def wrapper(*args, **kwargs):
+        config = app_config.readMutiConfig()
         ua = str(request.user_agent.string)
-        if ua == base.user_agent or True:
+        if (not config['accept_agreement']) or agreement_bypass:
+            return render_template('agreement.html')
+        if ua == base.user_agent:
+            return function(*args, **kwargs)
+        elif config['enable_debug']:
             return function(*args, **kwargs)
         else:
             return "<h1>该页面无法使用浏览器直接访问</h1>", 403
@@ -40,7 +45,7 @@ def dynamic_css():
     color_set = base.systemColorSet()[0]
     insert_css_text = ':root{--personal-color: ' + color_set + ' !important;}'
     with open(f'{path_prefix}static/app/css/dark.css') as f:
-        match color_mode:
+        match app_config.readConfig('color_mode'):
             case 'light':
                 insert_css_text = insert_css_text
             case 'dark':
@@ -200,13 +205,29 @@ def api(actions):
 def app_api(actions):
     match actions:
         case 'app_config':
-            config = {'version': base.app_version, 'cloud_conn': True, 'demo_mode': True, 'first_open': base.first_open, 'color_mode': color_mode}
+            config = {'version': base.app_version, 'first_open': base.first_open, 'local_config': app_config.readMutiConfig()}
             base.first_open = False
             return config
         case 'heartbeat':
             return {'t': int(time.time() * 1000)}
         case 'connection_test':
             return str(lib_base.connectionTest()).lower()
+        case 'setting':
+            if request.method.lower() == 'get':
+                setting_key = request.args.get('key')
+                setting_value = request.args.get('value')
+                if setting_value.lower() == 'true':
+                    setting_value = True
+                elif setting_value.lower() == 'false':
+                    setting_value = False
+                return {'resp': app_config.writeConfig(setting_key, setting_value)}
+            elif request.method.lower() == 'post':
+                return {'resp': app_config.writeMutiConfigs(dict(request.json))}
+            else:
+                return '405 Method Not Allowed', 405
+        case 'quit':
+            os._exit(0)
+            return ''
         case _:
             return '405 Method Not Allowed', 405
 
@@ -214,7 +235,7 @@ def app_api(actions):
 @app.route('/')
 @verify_ua
 def main():
-    return redirect('/ys')
+    return redirect(f'/{app_config.readConfig("default_area")}')
 
 
 @app.errorhandler(Exception)
