@@ -19,6 +19,53 @@ app_config_template = {
     }
 }
 
+app_config_value_type = {
+    'demo_mode': {
+        'display_string': '演示模式',
+        'type': 'boolean',
+        'upload_type': "boolean",
+        "is_disabled": True
+    },
+    'color_mode': {
+        'display_string': '外观颜色',
+        'type': 'list',
+        'upload_type': "string",
+        'values_form': '#!from_default_set!#',
+        'default_set': {
+            'auto': '自动',
+            'light': '浅色',
+            'dark': '深色'
+        },
+        "is_disabled": False
+    },
+    'accept_agreement': {
+        'display_string': '同意协议',
+        'type': 'boolean',
+        'upload_type': "boolean",
+        "is_disabled": True
+    },
+    'enable_debug': {
+        'display_string': '调试模式',
+        'type': 'boolean',
+        'upload_type': "boolean",
+        "is_disabled": False
+    },
+    'default_area': {
+        'display_string': '启动时默认显示分区',
+        'type': 'list',
+        'upload_type': "string",
+        'values_form': '#!from_remote*game_api!#',
+        "is_disabled": False
+
+},
+    'daily_note_time_delay': {
+        'display_string': '每日便笺更新频率（秒）',
+        'type': 'number',
+        'upload_type': "number",
+        "is_disabled": False
+    }
+}
+
 if not os.path.exists(config_dir):
     os.makedirs(config_dir)
 
@@ -80,3 +127,7 @@ def readMutiConfig(reload=False):
         with open(app_config) as f:
             current_config = json.load(f)
     return current_config['config']
+
+
+def getExistKeys():
+    return app_config_value_type

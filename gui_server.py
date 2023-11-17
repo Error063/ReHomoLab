@@ -3,7 +3,7 @@ import pprint
 import time
 from functools import wraps
 
-from flask import Flask, render_template, jsonify, request, redirect, make_response
+from flask import Flask, render_template, jsonify, request, redirect, make_response, send_file
 
 import app_config
 from base import bbs, auth
@@ -62,7 +62,7 @@ def dynamic_css():
 @app.route('/favicon.ico')
 @verify_ua
 def favicon():
-    return '404 Not Found', 404
+    return send_file('./static/appicon.ico')
 
 
 @app.route('/<game>')
@@ -95,20 +95,7 @@ def api(actions):
                     return ''
                 case _:
                     return ''
-                # case 'pwd':
-                #     if request.method.lower() == 'post':
-                #         login_json = request.json
-                #         mmt = login_json['mmt']
-                #         verification = login_json['verification']
-                #         match verification['version']:
-                #             case 'null':
-                #                 pass
-                #             case 'gt3':
-                #                 challenge = verification['geetest_challenge']
-                #                 validate = verification['geetest_validate']
-                #                 seccode = verification['geetest_seccode']
-                #             case 'gt4':
-                #                 pass
+
         case 'logout':
             auth.logout()
             return ''
@@ -133,6 +120,7 @@ def api(actions):
                     return jsonify({'articles': forum.articles, 'last_id': str(forum.last_id)})
                 case _:
                     return '405 Method Not Allowed', 405
+
         case 'forum_list':
             gid = request.args.get('gid', '-1')
             if gid.isdigit() and gid != '-1':
@@ -181,7 +169,6 @@ def api(actions):
                 'comments': comment.comments,
                 'is_last': comment.isLastFlag
             }
-            # pass
 
         case 'validate':
             match request.args.get('method', 'create'):
@@ -195,7 +182,18 @@ def api(actions):
                         return '405 Method Not Allowed', 405
 
         case "like":
-            pass
+            post_id = request.args.get('post_id')
+            reply_id = request.args.get('reply_id', '')
+            cancel = request.args.get('is_cancel', 'False').lower() == 'true'
+            if reply_id:
+                return list(bbs.Actions.upvoteReply(reply_id, post_id, cancel))
+            else:
+                return list(bbs.Actions.upvotePost(post_id, cancel))
+
+        case "collect":
+            post_id = request.args.get('post_id')
+            cancel = request.args.get('is_cancel', 'False').lower() == 'true'
+            return list(bbs.Actions.collectPost(post_id, cancel))
 
         case _:
             return '405 Method Not Allowed', 405
@@ -225,6 +223,8 @@ def app_api(actions):
                 return {'resp': app_config.writeMutiConfigs(dict(request.json))}
             else:
                 return '405 Method Not Allowed', 405
+        case 'get_settings':
+            return {'config': app_config.readMutiConfig(), 'pairs': app_config.getExistKeys()}
         case 'quit':
             os._exit(0)
             return ''

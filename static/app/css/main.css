@@ -18,7 +18,7 @@ body{
     position: fixed;
     top: 50px;
     width: 200px;
-    z-index: 999;
+    z-index: 10;
     margin-top: 20px;
 }
 #topbar{
@@ -26,7 +26,7 @@ body{
     height: 50px;
     position: fixed;
     top: 0;
-    z-index: 999;
+    z-index: 10;
 }
 .topbar-progress-bar{
     margin: 0 !important;
@@ -203,7 +203,7 @@ body{
     height: 100%;
     font-size: 16px;
     background-color: rgba(0, 0, 0, 0.5);
-    z-index: 2000;
+    z-index: 20;
 }
 /*.overlay-window{*/
 /*    position: fixed;*/
@@ -512,7 +512,7 @@ hr{
 .piece-reply .reply-user-nickname {
     margin-left: 50px;
 }
-.reply-detail-window-outer{
+.reply-detail-window-outer, .setting-window-outer{
     width: 60%;
     height: 80%;
     max-width: 1000px;
@@ -520,11 +520,12 @@ hr{
     background-color: white;
     border-radius: 10px;
 }
-.reply-detail-window{
+.reply-detail-window, .setting-window{
     width: 100%;
     height: 100%;
     background-color: rgba(var(--personal-color), 0.5);
     border-radius: 10px;
+    padding: 10px;
 }
 .release-time {
     text-align: left;
@@ -535,5 +536,43 @@ hr{
 }
 .mdui-select-menu{
     border-radius: 10px;
-
+}
+.mdui-btn:not(.mdui-btn-icon){
+    background-color: rgba(var(--personal-color), 0.5);
+    border-radius: 20px;
+}
+.mdui-dialog-actions .mdui-btn{
+    background-color: unset;
+}
+.setting-display-string, .setting-choice{
+    width: 50%;
+    display: flex;
+}
+.setting-display-string span{
+    /*padding: 0 3% 3% 0;*/
+    vertical-align: middle;
+    line-height: 2;
+}
+.setting-choice .mdui-textfield{
+    padding: unset !important;
+    width: 300px;
+}
+.setting-choice .mdui-textfield-input{
+    padding-left: 10px;
+}
+.setting-choice .mdui-select {
+    width: 302px;
+}
+.setting-choice{
+    justify-content: flex-end;
+}
+.setting-item{
+    display: flex;
+    margin: 10px;
+}
+.setting-items{
+    margin: 10px;
+}
+.submit-btn{
+    margin: 20px;
 }

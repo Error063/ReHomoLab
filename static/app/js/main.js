@@ -22,6 +22,7 @@ let new_detect = false;
 let is_login = false;
 let app_config;
 let locks = {postcard_render: false, comment_render: false}
+let game_list;
 window.geetest_activated = false;
 
 document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
@@ -131,6 +132,7 @@ function apiConnect(url, failed_warning=true) {
                         position: 'right-top',
                         timeout: 0
                     });
+                    mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
                 }
 
                 reject(new Error(`Request failed with status ${xhr.status}`));
@@ -143,33 +145,12 @@ function apiConnect(url, failed_warning=true) {
                     position: 'right-top',
                     timeout: 0
                 });
+                mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
             }
             reject(new Error('Request failed'));
         };
         xhr.send();
     });
-}
-
-function checkUpdateAndMessage() {
-    apiConnect('https://app-api.error063.work/homolab/info.json', false).then((res) => {
-        let online_config = JSON.parse(res);
-        // if(online_config.version > local_config.version){
-        //     mdui.alert('有可用更新', '有可用更新');
-        // }
-        let msg;
-        for (let i = 0; i < online_config.message.length; i++) {
-            msg = online_config.message[i];
-            mdui.alert(msg.content, msg.title);
-        }
-    })
-    // apiConnect('/app-api/app_config', false).then((res) => {
-    //     let local_config = JSON.parse(res);
-    //     if(local_config['cloud_conn']){
-    //
-    //     }else{
-    //         console.log('Cannot connect to the developer\'s api because the user setting!')
-    //     }
-    // })
 }
 
 function load_page(url) {
@@ -190,6 +171,27 @@ function load_page(url) {
             location.href = url
             break;
     }
+}
+
+function copy(text) {
+    /**
+     * 复制文本并弹出操作信息
+     **/
+    navigator.clipboard.writeText(text).then(function () {
+        /* clipboard successfully set */
+        mdui.snackbar({
+            message: '复制成功',
+            position: 'right-top',
+            timeout: 1000
+        });
+    }, function () {
+        /* clipboard successfully set */
+        mdui.snackbar({
+            message: '复制失败',
+            position: 'right-top',
+            timeout: 1000
+        });
+    }, 2000)
 }
 
 function getQueryString(url_string, name) {
@@ -237,25 +239,24 @@ function addArticle() {
 
 }
 
-function copy(text) {
-    /**
-     * 复制文本并弹出操作信息
-     **/
-    navigator.clipboard.writeText(text).then(function () {
-        /* clipboard successfully set */
-        mdui.snackbar({
-            message: '复制成功',
-            position: 'right-top',
-            timeout: 1000
-        });
-    }, function () {
-        /* clipboard successfully set */
-        mdui.snackbar({
-            message: '复制失败',
-            position: 'right-top',
-            timeout: 1000
-        });
-    }, 2000)
+function like_to(post_id, is_cancel=false, reply_id=""){
+    let flag = false;
+    apiConnect(`/api/like?post_id=${post_id}&reply_id=${reply_id}&is_cancel=${is_cancel}`).then((res) => {
+        if(JSON.parse(res)[0] === 0){
+            flag = true
+        }
+    })
+    return flag;
+}
+
+function collect_to(post_id, is_cancel=false){
+    let flag = false;
+    apiConnect(`/api/collect?post_id=${post_id}&is_cancel=${is_cancel}`).then((res) => {
+        if(JSON.parse(res)[0] === 0){
+            flag = true
+        }
+    })
+    return flag;
 }
 
 function showArticle(postId) {
@@ -362,29 +363,67 @@ function showArticle(postId) {
 
                 let like = document.createElement('div');
                 like.classList.add('article-like');
+                like.setAttribute('post_id', postId);
                 let like_btn = document.createElement('button');
                 like_btn.classList.add('mdui-btn');
                 like_btn.classList.add('mdui-btn-icon');
                 like_btn.classList.add('mdui-ripple');
                 like_btn.innerHTML = '<i class="mdui-icon material-icons">thumb_up</i>';
+                like_btn.addEventListener('click', (e) => {
+                    let btn = e.currentTarget;
+                    let post_id = btn.parentElement.getAttribute('post_id');
+                    let liked = btn.parentElement.hasAttribute('liked')
+                    let num = btn.parentElement.getElementsByClassName('num')[0];
+                    like_to(post_id, liked);
+                    if(liked){
+                        btn.style.color = 'unset';
+                        btn.parentElement.removeAttribute('liked');
+                        num.innerText = parseInt(num.innerText) - 1
+                    }else{
+                        btn.style.color = 'yellow';
+                        btn.parentElement.setAttribute('liked', '');
+                        num.innerText = parseInt(num.innerText) + 1
+                    }
+
+                })
                 if(parseInt(post_raw['data']['post']['self_operation']['attitude']) !== 0){
                     like_btn.style.color = 'yellow';
+                    like.setAttribute('liked','')
                 }
                 like.appendChild(like_btn);
                 let like_num = document.createElement('span');
+                like_num.classList.add('num')
                 like_num.textContent = post_raw['data']['post']['stat']['like_num'];
                 like.appendChild(like_num);
                 article_actions.appendChild(like)
 
                 let collect = document.createElement('div');
                 collect.classList.add('article-collect');
+                collect.setAttribute('post_id', postId);
                 let collect_btn = document.createElement('button');
                 collect_btn.classList.add('mdui-btn');
                 collect_btn.classList.add('mdui-btn-icon');
                 collect_btn.classList.add('mdui-ripple');
                 collect_btn.innerHTML = '<i class="mdui-icon material-icons">star</i>';
+                collect_btn.addEventListener('click', (e) => {
+                    let btn = e.currentTarget;
+                    let post_id = btn.parentElement.getAttribute('post_id');
+                    let collected = btn.parentElement.hasAttribute('collected')
+                    let num = btn.parentElement.getElementsByClassName('num')[0];
+                    collect_to(post_id, collected);
+                    if(collected){
+                        btn.style.color = 'unset';
+                        btn.parentElement.removeAttribute('collected');
+                        num.innerText = parseInt(num.innerText) - 1
+                    }else{
+                        btn.style.color = 'yellow';
+                        btn.parentElement.setAttribute('collected', '');
+                        num.innerText = parseInt(num.innerText) + 1
+                    }
+                })
                 if(post_raw['data']['post']['self_operation']['is_collected']){
                     collect_btn.style.color = 'yellow';
+                    collect.setAttribute('collected', '');
                 }
                 collect.appendChild(collect_btn);
                 let collect_num = document.createElement('span');
@@ -393,6 +432,7 @@ function showArticle(postId) {
                 article_actions.appendChild(collect);
 
                 let reply = document.createElement('div');
+                reply.setAttribute('post_id', postId);
                 reply.classList.add('article-replies');
                 let reply_btn = document.createElement('button');
                 reply_btn.classList.add('mdui-btn');
@@ -604,13 +644,14 @@ function renderCommentsTree(article_comment) {
                     piece_reply.appendChild(comment_main);
                     article_comment.appendChild(piece_reply);
                 }
-                if(result.is_last || result.comments.length === 0) {
+                if((result.is_last || result.comments.length === 0) && article_comment.getElementsByClassName('no-more').length === 0) {
                     let piece_reply = document.createElement('div');
                     piece_reply.classList.add('piece-reply');
+                    piece_reply.classList.add('no-more');
                     piece_reply.innerHTML = "<p style='text-align: center;line-height: 2.5;'>没有更多了</p>";
-                    article_comment.appendChild(piece_reply);
                     piece_reply.style.height = '40px'
                     article_comment.setAttribute("is_last", 'true')
+                    article_comment.appendChild(piece_reply);
                 }
             })
         }
@@ -646,9 +687,6 @@ function resolutionChange(i) {
     videoClass[i].play();
 }
 
-function like(post_id, like_to="article", reply_id){
-
-}
 let old_value = -1;
 right_element.addEventListener('scroll', () => {
     /**
@@ -657,6 +695,137 @@ right_element.addEventListener('scroll', () => {
     if(Math.round(right_element.scrollTop + right_element.clientHeight - right_element.scrollHeight) >= 0){
         old_value = Math.round(right_element.scrollTop + right_element.clientHeight - right_element.scrollHeight);
     }
+})
+
+document.getElementsByClassName('setting-btn')[0].addEventListener('click', () => {
+    let new_overlay = document.createElement('div');
+    new_overlay.classList.add('overlay');
+    new_overlay.addEventListener('click', (e) => {
+        if(e.target.classList.contains('overlay')){
+            e.target.remove();
+        }
+    })
+    new_overlay.innerHTML = '<div class="setting-window-outer"><div class="setting-window"></div></div>'
+    apiConnect('/app-api/get_settings').then((res) => {
+        let settings = JSON.parse(res);
+        let setting_items = document.createElement('div');
+        let aim_window = new_overlay.getElementsByClassName('setting-window')[0];
+        setting_items.classList.add('setting-items');
+        for (const key in settings.pairs) {
+            let value_types = settings.pairs[key];
+            let setting_state = settings.config[key];
+            if(!value_types.is_disabled || settings.config.enable_debug){
+                let setting_item = document.createElement('div');
+                setting_item.classList.add('setting-item');
+                // setting_item.classList.add('mdui-list-item');
+                setting_item.id = `setting-item-${key}`
+                setting_item.innerHTML += `<div class="setting-display-string"><span style="${value_types.is_disabled?'color: red;':''}">${value_types.display_string}</span></div>`;
+                let setting_choice = document.createElement('div')
+                setting_choice.classList.add('setting-choice')
+                switch (value_types.type) {
+                    case 'boolean':
+                        setting_choice.innerHTML += `<label class="mdui-switch"><input class="user-choose-${key}" type="checkbox" ${setting_state?'checked':''}/><i class="mdui-switch-icon"></i></label>`
+                        break;
+                    case 'list':
+                        let select_item = document.createElement('select');
+                        select_item.classList.add('mdui-select')
+                        select_item.classList.add(`user-choose-${key}`)
+                        select_item.setAttribute('mdui-select', '')
+                        switch (value_types.values_form) {
+                            case '#!from_remote*game_api!#':
+                                if (game_list.length > 0) {
+                                    for (let i = 0; i < game_list.length; i++) {
+                                        select_item.innerHTML += `<option value="${game_list[i][3]}" ${setting_state===game_list[i][3]?'selected':''}>${game_list[i][0]}</option>`
+                                    }
+                                }
+                                break;
+                            case '#!from_default_set!#':
+                                for (const value in value_types.default_set) {
+                                    let name = value_types.default_set[value];
+                                    select_item.innerHTML += `<option value="${value}" ${setting_state===value?'selected':''}>${name}</option>`
+                                }
+                                break;
+                        }
+                        setting_choice.appendChild(select_item)
+                        break;
+                    case 'number':
+                        setting_choice.innerHTML += `<div class="mdui-textfield"><input class="mdui-textfield-input user-choose-${key}" type="number" value="${setting_state}"/></div>`
+                        break;
+                    default:
+                        setting_choice.innerHTML += `<div class="mdui-textfield"><input class="mdui-textfield-input user-choose-${key}" type="text" value="${setting_state}"/></div>`
+                        break;
+
+                }
+                setting_item.appendChild(setting_choice)
+                setting_items.appendChild(setting_item)
+            }
+        }
+        aim_window.appendChild(setting_items)
+
+        let submit_btn = document.createElement('button')
+        submit_btn.classList.add("mdui-btn")
+        submit_btn.classList.add('mdui-ripple')
+        submit_btn.classList.add('submit-btn')
+        submit_btn.innerText = '保存设置'
+        submit_btn.addEventListener('click', () => {
+            apiConnect('/app-api/get_settings').then((res) => {
+                let changed = false;
+                let settings = JSON.parse(res);
+                for (const key in settings.pairs) {
+                    let value_types = settings.pairs[key];
+                    let setting_state = settings.config[key];
+                    if(!value_types.is_disabled || settings.config.enable_debug){
+                        let set = $(`.user-choose-${key}`)[0]
+                        let value = set.value
+                        if(set.getAttribute('type') === 'checkbox'){
+                            value = set.checked
+                        }
+                        if(value != setting_state){
+                            if(settings.config.enable_debug && value_types.is_disabled){
+                                mdui.confirm(`修改 ${value_types.display_string} 可能会导致程序出现异常，要继续吗？`, '警告', () => {
+                                        changed = true
+                                        apiConnect(`/app-api/setting?key=${key}&value=${value}`);
+                                        load_page('/');
+                                    }, () => {},
+                                    {
+                                        confirmText: "<span style='color: red'>继续</span>",
+                                        cancelText: "关闭"
+                                    })
+                            }else{
+                                changed = true
+                                apiConnect(`/app-api/setting?key=${key}&value=${value}`)
+                            }
+
+                        }
+                    }
+                }
+                if(changed){
+                    mdui.snackbar({
+                        message: '部分设置可能需要重启应用后生效',
+                        position: 'right-top',
+                        timeout: 5000
+                    });
+                    setTimeout(() => {
+                        load_page('/');
+                    }, 5000)
+                }
+            })
+        })
+        aim_window.appendChild(submit_btn)
+
+        let about_btn = document.createElement('button')
+        about_btn.classList.add("mdui-btn")
+        about_btn.classList.add('mdui-ripple')
+        about_btn.classList.add('submit-btn')
+        about_btn.innerText = '关于'
+        about_btn.addEventListener('click', () => {
+            mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', ()=>{}, {confirmText: "好"})
+        })
+        aim_window.appendChild(about_btn)
+        mdui.mutation();
+    })
+
+    document.body.appendChild(new_overlay)
 })
 
 setInterval(() => {
@@ -829,6 +998,16 @@ window.addEventListener('load', (e) => {
         }
     })
 
+    apiConnect('/app-api/connection_test', false).then((res) =>{
+        if(res === 'false'){
+            mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
+            e.preventDefault();
+        }
+    }, (rej) => {
+        mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
+        e.preventDefault();
+    })
+
     apiConnect(current_user_api).then((res) => {
         let user = JSON.parse(res);
         document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname;
@@ -882,6 +1061,7 @@ window.addEventListener('load', (e) => {
     });
     apiConnect(game_api).then((res) => {
         let game = JSON.parse(res);
+        game_list = game;
         if (game.length > 0) {
             for (let i = 0; i < game.length; i++) {
                 game_element.innerHTML += `<div class="submenu__item" onclick="load_page('/${game[i][3]}')">${game[i][0]}</div>`
@@ -956,8 +1136,18 @@ setInterval(() => {
 // setInterval(() => {
 //     let t = new Date().getTime();
 //     apiConnect(`/app-api/heartbeat?t=${t}`, false).then((res) => {
-//         // console.log(`Time delay: ${parseInt(JSON.parse(res)['t']) - t}ms`)
+//         console.log(`Time delay: ${parseInt(JSON.parse(res)['t']) - t}ms`)
 //     }, (rej) => {
 //         mdui.alert('应用内通讯失败！')
 //     })
 // },500)
+
+setInterval(() => {
+    apiConnect('/app-api/connection_test', false).then((res) =>{
+        if(res === 'false'){
+            mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
+        }
+    }, (rej) => {
+        mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
+    })
+}, 30000)

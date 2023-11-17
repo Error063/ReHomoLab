@@ -14,7 +14,7 @@ body:not(.ql-fold){
 .overlay-window-wrapper {
     background-color: rgba(var(--personal-color), 0.0) !important;
 }
-.loading_outter{
+.loading_outter, .reply-detail-window-outer, .setting-window-outer{
     background-color: black !important;
 }
 .loading {

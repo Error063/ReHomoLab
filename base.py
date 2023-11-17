@@ -17,6 +17,7 @@ app_version = '0.0.1'
 first_open = True
 
 
+
 def systemColorSet():
     """
     从注册表中获取系统颜色
