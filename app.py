@@ -149,22 +149,25 @@ class DailyNoteChecker(threading.Thread):
 
 
 if __name__ == '__main__':
-    menu = (MenuItem('显示应用', action=openWindow, default=True), MenuItem('退出', kill_self))
-    byte_data = base64.b64decode(appicon_base64)
-    image_data = BytesIO(byte_data)
-    image = Image.open(image_data)
-    icon = pystray.Icon("name", image, "Re: HoMoLab", menu)
-    tray_thread = threading.Thread(target=icon.run)
-    tray_thread.start()
-    dnc = DailyNoteChecker()
-    dnc.start()
-    openWindow()
-    detector = Detector()
-    detector.start()
-    while True:
-        if load:
-            load = False
-            webview.create_window('Re: HoMoLab', app, min_size=(1400, 800))
-            webview.start(debug=app_config.readConfig('enable_debug', True), user_agent=base.user_agent)
-
-        time.sleep(1)
+    if sys.argv[-1] != base.git_commit and base.in_build:
+        messagebox.showerror("错误", f"无法直接打开该程序，请使用launcher.exe以启动该程序。")
+        sys.exit(1)
+    else:
+        menu = (MenuItem('显示应用', action=openWindow, default=True), MenuItem('退出', kill_self))
+        byte_data = base64.b64decode(appicon_base64)
+        image_data = BytesIO(byte_data)
+        image = Image.open(image_data)
+        icon = pystray.Icon("name", image, "Re: HoMoLab", menu)
+        tray_thread = threading.Thread(target=icon.run)
+        tray_thread.start()
+        dnc = DailyNoteChecker()
+        dnc.start()
+        openWindow()
+        detector = Detector()
+        detector.start()
+        while True:
+            if load:
+                load = False
+                webview.create_window('Re: HoMoLab', app, min_size=(1400, 800))
+                webview.start(debug=app_config.readConfig('enable_debug', True), user_agent=base.user_agent)
+            time.sleep(1)
