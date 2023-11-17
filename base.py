@@ -6,14 +6,12 @@ import libmiyoushe
 from libmiyoushe import bbs, auth
 from libmiyoushe import base as lib_base
 
-libmiyoushe.account_file = r"C:\Users\czn20\.libhyperion\configs\accounts.json"
-
-
 if platform.system() == 'Windows':
     import winreg
 
 user_agent = f"HoMoLab/114.514 (Authcode: {''.join((''.join(random.sample(string.digits + string.ascii_letters, 32))).lower())})"
 app_version = '0.0.1'
+git_commit = "303993b07ac6b8810c971122efebd08c6d838c7d"
 first_open = True
 
 

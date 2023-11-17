@@ -819,7 +819,7 @@ document.getElementsByClassName('setting-btn')[0].addEventListener('click', () =
         about_btn.classList.add('submit-btn')
         about_btn.innerText = '关于'
         about_btn.addEventListener('click', () => {
-            mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', ()=>{}, {confirmText: "好"})
+            mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}-${app_config.git_commit}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', ()=>{}, {confirmText: "好"})
         })
         aim_window.appendChild(about_btn)
         mdui.mutation();
