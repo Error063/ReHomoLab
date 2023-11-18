@@ -41,7 +41,7 @@ print('Generate the version file for application')
 with open('./version.template.txt', encoding='utf8') as f:
     version_file = f.read()
 version_file = version_file.replace('#version_tuple#', str(tuple(map(int, base.app_version.split(".")))))
-version_file = version_file.replace('#version#', str(base.app_version))
+version_file = version_file.replace('#version#', f"{base.app_version}-{current_git_commit[:7]}")
 
 print('Build window-based application')
 with open('./tmp.txt', encoding='utf8', mode='w') as f:
