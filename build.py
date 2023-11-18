@@ -5,6 +5,12 @@ import re
 
 import base
 
+print('Remove previous build folder')
+try:
+    shutil.rmtree('./dist')
+except FileNotFoundError:
+    pass
+
 print('Get git info')
 if os.system('git -v') == 0 and os.path.exists('./.git'):
     current_git_commit = (''.join(list(os.popen('git rev-parse HEAD')))).strip()
@@ -24,18 +30,31 @@ with open('launcher.py', encoding='utf8', mode='w') as f:
     f.write(re.sub(r'git_commit = ".+?"', 'git_commit = "{}"'.format(current_git_commit), launcher_code))
 print(current_git_commit)
 
+print('Set a flag for building')
 with open('base.py', encoding='utf8') as f:
     base_code = f.read()
 # print(base_code.replace('in_build = False', 'in_build = True'))
 with open('base.py', encoding='utf8', mode='w') as f:
     f.write(base_code.replace('in_build = False', 'in_build = True'))
 
+print('Generate the version file for application')
+with open('./version.template.txt', encoding='utf8') as f:
+    version_file = f.read()
+version_file = version_file.replace('#version_tuple#', str(tuple(map(int, base.app_version.split(".")))))
+version_file = version_file.replace('#version#', str(base.app_version))
+
 print('Build window-based application')
-os.system('pyinstaller --noconfirm --onedir --windowed --icon "./static/appicon.ico" --name "HoMoLab" --add-data "./static;static/" --add-data "./templates;templates/"  "./app.py"')
+with open('./tmp.txt', encoding='utf8', mode='w') as f:
+    f.write(version_file.replace('#original_file_name#', "HoMoLab.exe"))
+os.system('pyinstaller --noconfirm --onedir --windowed --icon "./static/appicon.ico" --name "HoMoLab" --add-data "./static;static/" --add-data "./templates;templates/" --version-file ./tmp.txt  "./app.py"')
 print('Build console-based application')
-os.system('pyinstaller --noconfirm --onedir --console --icon "./static/appicon.ico" --name "HoMoLab-console" --add-data "./static;static/" --add-data "./templates;templates/"  "./app.py"')
+with open('./tmp.txt', encoding='utf8', mode='w') as f:
+    f.write(version_file.replace('#original_file_name#', "HoMoLab-console.exe"))
+os.system('pyinstaller --noconfirm --onedir --console --icon "./static/appicon.ico" --name "HoMoLab-console" --add-data "./static;static/" --add-data "./templates;templates/" --version-file ./tmp.txt "./app.py"')
 print('Build application launcher')
-os.system('pyinstaller -w -i "./static/appicon.ico" "./launcher.py"')
+with open('./tmp.txt', encoding='utf8', mode='w') as f:
+    f.write(version_file.replace('#original_file_name#', "launcher.exe"))
+os.system('pyinstaller -w -i "./static/appicon.ico" --version-file ./tmp.txt "./launcher.py"')
 
 with open('base.py', encoding='utf8') as f:
     base_code = f.read()

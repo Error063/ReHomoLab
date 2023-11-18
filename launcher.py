@@ -1,7 +1,7 @@
 import app_config
 import subprocess
 
-git_commit = "0ba60c0d45cabaf487fce84fdb3b1ea291455b66"
+git_commit = "d3e1325380a83bdc1ecbd699126a39dacb592e36"
 
 if app_config.readConfig('enable_debug'):
     subprocess.Popen(f'./HoMoLab-console.exe {git_commit}')
