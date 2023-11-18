@@ -203,7 +203,7 @@ def api(actions):
 def app_api(actions):
     match actions:
         case 'app_config':
-            config = {'version': base.app_version, 'git_commit': base.git_commit[:12], 'first_open': base.first_open, 'local_config': app_config.readMutiConfig()}
+            config = {'version': base.app_version, 'git_commit': base.git_commit[:7], 'first_open': base.first_open, 'local_config': app_config.readMutiConfig()}
             base.first_open = False
             return config
         case 'heartbeat':

@@ -17,6 +17,11 @@ if os.system('git -v') == 0 and os.path.exists('./.git'):
             f.write(re.sub(r'git_commit = ".+?"', 'git_commit = "{}"'.format(current_git_commit), base_code))
 else:
     current_git_commit = base.git_commit
+
+with open('launcher.py', encoding='utf8') as f:
+    launcher_code = f.read()
+with open('launcher.py', encoding='utf8', mode='w') as f:
+    f.write(re.sub(r'git_commit = ".+?"', 'git_commit = "{}"'.format(current_git_commit), launcher_code))
 print(current_git_commit)
 
 with open('base.py', encoding='utf8') as f:
@@ -48,7 +53,7 @@ shutil.rmtree('./dist/launcher')
 shutil.rmtree('./build')
 
 print('Compress the folder')
-with zipfile.ZipFile(f'./dist/HoMoLab-{base.app_version}-{current_git_commit[:12]}-win.zip', "w", zipfile.ZIP_DEFLATED) as zip:
+with zipfile.ZipFile(f'./dist/HoMoLab-{base.app_version}-{current_git_commit[:7]}-win.zip', "w", zipfile.ZIP_DEFLATED) as zip:
     for path, dirnames, filenames in os.walk('./dist/HoMoLab'):
         fpath = path.replace('./dist/HoMoLab', '')
         print(fpath)
