@@ -1,4 +1,3 @@
-# UTF-8
 VSVersionInfo(
   ffi=FixedFileInfo(
 filevers=#version_tuple#,
