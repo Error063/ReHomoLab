@@ -156,7 +156,6 @@ function apiConnect(url, failed_warning=true) {
 function load_page(url) {
     /* 将页面跳转到指定的url或执行指定的操作 */
     article_element.innerHTML = ''
-    document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: visible;')
     switch (url) {
         case 'reload':
             location.reload();
@@ -1114,7 +1113,6 @@ window.addEventListener('load', (e) => {
     if (getQueryString(page_api, 'type') === 'feed') {
         document.querySelector('#recommend').classList.add('selected-forum');
     }
-    document.getElementsByClassName('topbar-progress-bar')[0].setAttribute('style', 'visibility: hidden;')
     addArticle();
     setInterval(function () {
         document.getElementsByClassName('loading_outter')[0].classList.add('disabled')
