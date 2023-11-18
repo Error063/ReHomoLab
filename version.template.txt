@@ -18,7 +18,7 @@ StringFileInfo(
     StringStruct(u'FileDescription', u'Re: HoMoLab'),
     StringStruct(u'FileVersion', u'#version#'),
     StringStruct(u'InternalName', u'SVN'),
-    StringStruct(u'LegalCopyright', u' Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/> Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.'),
+    StringStruct(u'LegalCopyright', u' Copyright (C) Error063'),
     StringStruct(u'OriginalFilename', u'#original_file_name#'),
     StringStruct(u'ProductName', u'Re: HoMoLab'),
     StringStruct(u'ProductVersion', u'#version#')])

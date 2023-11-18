@@ -10,9 +10,9 @@ if platform.system() == 'Windows':
     import winreg
 
 user_agent = f"HoMoLab/114.514 (Authcode: {''.join((''.join(random.sample(string.digits + string.ascii_letters, 32))).lower())})"
-app_version = '0.0.1'
-git_commit = "022cfe0e5a5005eed73edf37d6acc8332a6b8a23"
-in_build = True
+app_version = '0.0.1.0'
+git_commit = "de5f1f320609751ee6abd3483235dc600bf7fdf4"
+in_build = False
 
 first_open = True
 
