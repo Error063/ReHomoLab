@@ -228,7 +228,30 @@ function addArticle() {
                         page = page_get;
                     }
                     for (let i = 0; i < articles.length; i++) {
-                        article_element.innerHTML += `<div class="postCard fix mdui-ripple mdui-hoverable" articleId="${articles[i].post_id}" ${articles[i]['collect'] ? 'collected' : ''} ${articles[i]['upvote'] ? 'upvoted' : ''}><div class="user" onclick="" style="cursor: pointer"><img class="avatar" src="${articles[i].authorAvatar}"/><div class="userinfo"><div class="nickname">${articles[i].authorName}</div><div class="describe">${articles[i].authorDescribe}</div></div></div><div class="articleInfo" onclick="" style="cursor: pointer"><div class="image"><div class="articleCover" style="${articles[i].cover === '' ? `background-color: rgba(var(--personal-color), 0.1)` : `background-image: url('${articles[i].cover}')`}"></div></div><div class="info"><h3 class="articleTitle">${articles[i].title}</h3><div class="articleDescribe">${articles[i].describe}</div></div></div></div>`
+                        let postcard = document.createElement('div')
+                        postcard.setAttribute('class', 'postCard fix mdui-ripple mdui-hoverable')
+                        postcard.setAttribute('articleId', articles[i].post_id)
+                        articles[i]['collect'] ? postcard.setAttribute('collected', '') : '';
+                        articles[i]['upvote'] ? postcard.setAttribute('upvoted', '') : '';
+                        postcard.style.display = 'none';
+                        postcard.innerHTML += `
+<div class="user" onclick="" style="cursor: pointer">
+<img class="avatar" src="${articles[i].authorAvatar}"/>
+<div class="userinfo"><div class="nickname">${articles[i].authorName}</div>
+<div class="describe">${articles[i].authorDescribe}</div>
+</div>
+</div>
+<div class="articleInfo" onclick="" style="cursor: pointer">
+<div class="image">
+<div class="articleCover" style="${articles[i].cover === '' ? `background-color: rgba(var(--personal-color), 0.1)` : `background-image: url('${articles[i].cover}')`}"></div>
+</div>
+<div class="info">
+<h3 class="articleTitle">${articles[i].title}</h3>
+<div class="articleDescribe">${articles[i].describe}</div>
+</div>
+</div>`
+                        article_element.appendChild(postcard)
+                        $(postcard).fadeIn(200)
                     }
                 }
             })
@@ -269,6 +292,7 @@ function showArticle(postId) {
     }
     let new_overlay = document.createElement('div');
     new_overlay.classList.add('overlay');
+    new_overlay.style.display = 'none';
     new_overlay.innerHTML += `<div class="overlay-window article-overlay"><div class="overlay-window-wrapper"><div class="overlay-window-topbar"><button class="mdui-btn mdui-btn-icon mdui-btn-dense mdui-color-theme-accent mdui-ripple overlay-window-close-btn"><i class="mdui-icon material-icons">close</i></button></div><div class='overlay-window-main'></div></div></div>`;
     let overlay_window = new_overlay.getElementsByClassName('overlay-window-main')[0];
     // overlay_window.innerHTML = '';
@@ -540,7 +564,9 @@ function showArticle(postId) {
     overlay_window.appendChild(article_right);
     new_overlay.addEventListener('click', (e) => {
         if(e.target.classList.contains('overlay')){
-            e.target.remove();
+            $(e.target).fadeOut(200, () => {
+                e.target.remove();
+            });
         }
     })
     new_overlay.getElementsByClassName('overlay-window-close-btn')[0].addEventListener('click', function (e) {
@@ -550,7 +576,9 @@ function showArticle(postId) {
            let target_element = e.target;
             do{
                 if(target_element.classList.contains('overlay')){
-                    target_element.remove();
+                    $(target_element).fadeOut(200, () => {
+                        target_element.remove();
+                    });
                     break;
                 }else {
                     target_element = target_element.parentElement;
@@ -569,12 +597,15 @@ function showArticle(postId) {
             for (let i = 0; i < overlays.length; i++) {
                 let current_overlay = overlays[i];
                 if(!(current_overlay.classList.contains('loading_outter'))){
-                    current_overlay.remove()
+                    $(current_overlay).fadeOut(200, () => {
+                        current_overlay.remove();
+                    });
                 }
             }
         }
     })
     document.body.appendChild(new_overlay)
+    $(new_overlay).fadeIn(200);
 }
 
 function renderCommentsTree(article_comment) {
@@ -697,135 +728,145 @@ right_element.addEventListener('scroll', () => {
     }
 })
 
-document.getElementsByClassName('setting-btn')[0].addEventListener('click', () => {
-    let new_overlay = document.createElement('div');
-    new_overlay.classList.add('overlay');
-    new_overlay.addEventListener('click', (e) => {
-        if(e.target.classList.contains('overlay')){
-            e.target.remove();
-        }
-    })
-    new_overlay.innerHTML = '<div class="setting-window-outer"><div class="setting-window"></div></div>'
-    apiConnect('/app-api/get_settings').then((res) => {
-        let settings = JSON.parse(res);
-        let setting_items = document.createElement('div');
-        let aim_window = new_overlay.getElementsByClassName('setting-window')[0];
-        setting_items.classList.add('setting-items');
-        for (const key in settings.pairs) {
-            let value_types = settings.pairs[key];
-            let setting_state = settings.config[key];
-            if(!value_types.is_disabled || settings.config.enable_debug){
-                let setting_item = document.createElement('div');
-                setting_item.classList.add('setting-item');
-                // setting_item.classList.add('mdui-list-item');
-                setting_item.id = `setting-item-${key}`
-                setting_item.innerHTML += `<div class="setting-display-string"><span style="${value_types.is_disabled?'color: red;':''}">${value_types.display_string}</span></div>`;
-                let setting_choice = document.createElement('div')
-                setting_choice.classList.add('setting-choice')
-                switch (value_types.type) {
-                    case 'boolean':
-                        setting_choice.innerHTML += `<label class="mdui-switch"><input class="user-choose-${key}" type="checkbox" ${setting_state?'checked':''}/><i class="mdui-switch-icon"></i></label>`
-                        break;
-                    case 'list':
-                        let select_item = document.createElement('select');
-                        select_item.classList.add('mdui-select')
-                        select_item.classList.add(`user-choose-${key}`)
-                        select_item.setAttribute('mdui-select', '')
-                        switch (value_types.values_form) {
-                            case '#!from_remote*game_api!#':
-                                if (game_list.length > 0) {
-                                    for (let i = 0; i < game_list.length; i++) {
-                                        select_item.innerHTML += `<option value="${game_list[i][3]}" ${setting_state===game_list[i][3]?'selected':''}>${game_list[i][0]}</option>`
-                                    }
-                                }
-                                break;
-                            case '#!from_default_set!#':
-                                for (const value in value_types.default_set) {
-                                    let name = value_types.default_set[value];
-                                    select_item.innerHTML += `<option value="${value}" ${setting_state===value?'selected':''}>${name}</option>`
-                                }
-                                break;
-                        }
-                        setting_choice.appendChild(select_item)
-                        break;
-                    case 'number':
-                        setting_choice.innerHTML += `<div class="mdui-textfield"><input class="mdui-textfield-input user-choose-${key}" type="number" value="${setting_state}"/></div>`
-                        break;
-                    default:
-                        setting_choice.innerHTML += `<div class="mdui-textfield"><input class="mdui-textfield-input user-choose-${key}" type="text" value="${setting_state}"/></div>`
-                        break;
-
-                }
-                setting_item.appendChild(setting_choice)
-                setting_items.appendChild(setting_item)
+$('.setting-btn')[0].addEventListener('click', () => {
+    if(app_config.local_config.demo_mode){
+        mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
+    }else {
+        let new_overlay = document.createElement('div');
+        new_overlay.classList.add('overlay');
+        new_overlay.style.display = 'none';
+        new_overlay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('overlay')) {
+                $(e.target).fadeOut(200, () => {
+                    e.target.remove();
+                });
             }
-        }
-        aim_window.appendChild(setting_items)
-
-        let submit_btn = document.createElement('button')
-        submit_btn.classList.add("mdui-btn")
-        submit_btn.classList.add('mdui-ripple')
-        submit_btn.classList.add('submit-btn')
-        submit_btn.innerText = '保存设置'
-        submit_btn.addEventListener('click', () => {
-            apiConnect('/app-api/get_settings').then((res) => {
-                let changed = false;
-                let settings = JSON.parse(res);
-                for (const key in settings.pairs) {
-                    let value_types = settings.pairs[key];
-                    let setting_state = settings.config[key];
-                    if(!value_types.is_disabled || settings.config.enable_debug){
-                        let set = $(`.user-choose-${key}`)[0]
-                        let value = set.value
-                        if(set.getAttribute('type') === 'checkbox'){
-                            value = set.checked
-                        }
-                        if(value != setting_state){
-                            if(settings.config.enable_debug && value_types.is_disabled){
-                                mdui.confirm(`修改 ${value_types.display_string} 可能会导致程序出现异常，要继续吗？`, '警告', () => {
-                                        changed = true
-                                        apiConnect(`/app-api/setting?key=${key}&value=${value}`);
-                                        load_page('/');
-                                    }, () => {},
-                                    {
-                                        confirmText: "<span style='color: red'>继续</span>",
-                                        cancelText: "关闭"
-                                    })
-                            }else{
-                                changed = true
-                                apiConnect(`/app-api/setting?key=${key}&value=${value}`)
+        })
+        new_overlay.innerHTML = '<div class="setting-window-outer"><div class="setting-window"></div></div>'
+        apiConnect('/app-api/get_settings').then((res) => {
+            let settings = JSON.parse(res);
+            let setting_items = document.createElement('div');
+            let aim_window = new_overlay.getElementsByClassName('setting-window')[0];
+            setting_items.classList.add('setting-items');
+            for (const key in settings.pairs) {
+                let value_types = settings.pairs[key];
+                let setting_state = settings.config[key];
+                if (!value_types.is_disabled || settings.config.enable_debug) {
+                    let setting_item = document.createElement('div');
+                    setting_item.classList.add('setting-item');
+                    // setting_item.classList.add('mdui-list-item');
+                    setting_item.id = `setting-item-${key}`
+                    setting_item.innerHTML += `<div class="setting-display-string"><span style="${value_types.is_disabled ? 'color: red;' : ''}">${value_types.display_string}</span></div>`;
+                    let setting_choice = document.createElement('div')
+                    setting_choice.classList.add('setting-choice')
+                    switch (value_types.type) {
+                        case 'boolean':
+                            setting_choice.innerHTML += `<label class="mdui-switch"><input class="user-choose-${key}" type="checkbox" ${setting_state ? 'checked' : ''}/><i class="mdui-switch-icon"></i></label>`
+                            break;
+                        case 'list':
+                            let select_item = document.createElement('select');
+                            select_item.classList.add('mdui-select')
+                            select_item.classList.add(`user-choose-${key}`)
+                            select_item.setAttribute('mdui-select', '')
+                            switch (value_types.values_form) {
+                                case '#!from_remote*game_api!#':
+                                    if (game_list.length > 0) {
+                                        for (let i = 0; i < game_list.length; i++) {
+                                            select_item.innerHTML += `<option value="${game_list[i][3]}" ${setting_state === game_list[i][3] ? 'selected' : ''}>${game_list[i][0]}</option>`
+                                        }
+                                    }
+                                    break;
+                                case '#!from_default_set!#':
+                                    for (const value in value_types.default_set) {
+                                        let name = value_types.default_set[value];
+                                        select_item.innerHTML += `<option value="${value}" ${setting_state === value ? 'selected' : ''}>${name}</option>`
+                                    }
+                                    break;
                             }
+                            setting_choice.appendChild(select_item)
+                            break;
+                        case 'number':
+                            setting_choice.innerHTML += `<div class="mdui-textfield"><input class="mdui-textfield-input user-choose-${key}" type="number" value="${setting_state}"/></div>`
+                            break;
+                        default:
+                            setting_choice.innerHTML += `<div class="mdui-textfield"><input class="mdui-textfield-input user-choose-${key}" type="text" value="${setting_state}"/></div>`
+                            break;
 
+                    }
+                    setting_item.appendChild(setting_choice)
+                    setting_items.appendChild(setting_item)
+                }
+            }
+            aim_window.appendChild(setting_items)
+
+            let submit_btn = document.createElement('button')
+            submit_btn.classList.add("mdui-btn")
+            submit_btn.classList.add('mdui-ripple')
+            submit_btn.classList.add('submit-btn')
+            submit_btn.innerText = '保存设置'
+            submit_btn.addEventListener('click', () => {
+                apiConnect('/app-api/get_settings').then((res) => {
+                    let changed = false;
+                    let settings = JSON.parse(res);
+                    for (const key in settings.pairs) {
+                        let value_types = settings.pairs[key];
+                        let setting_state = settings.config[key];
+                        if (!value_types.is_disabled || settings.config.enable_debug) {
+                            let set = $(`.user-choose-${key}`)[0]
+                            let value = set.value
+                            if (set.getAttribute('type') === 'checkbox') {
+                                value = set.checked
+                            }
+                            if (value != setting_state) {
+                                if (settings.config.enable_debug && value_types.is_disabled) {
+                                    mdui.confirm(`修改 ${value_types.display_string} 可能会导致程序出现异常，要继续吗？`, '警告', () => {
+                                            changed = true
+                                            apiConnect(`/app-api/setting?key=${key}&value=${value}`);
+                                            load_page('reload');
+                                        }, () => {
+                                        },
+                                        {
+                                            confirmText: "<span style='color: red'>继续</span>",
+                                            cancelText: "关闭"
+                                        })
+                                } else {
+                                    changed = true
+                                    apiConnect(`/app-api/setting?key=${key}&value=${value}`)
+                                }
+
+                            }
                         }
                     }
-                }
-                if(changed){
-                    mdui.snackbar({
-                        message: '部分设置可能需要重启应用后生效',
-                        position: 'right-top',
-                        timeout: 5000
-                    });
-                    setTimeout(() => {
-                        load_page('/');
-                    }, 5000)
-                }
+                    if (changed) {
+                        mdui.snackbar({
+                            message: '部分设置可能需要重启应用后生效',
+                            position: 'right-top',
+                            timeout: 5000
+                        });
+                        setTimeout(() => {
+                            load_page('reload');
+                        }, 5000)
+                    }
+                })
             })
-        })
-        aim_window.appendChild(submit_btn)
+            aim_window.appendChild(submit_btn)
 
-        let about_btn = document.createElement('button')
-        about_btn.classList.add("mdui-btn")
-        about_btn.classList.add('mdui-ripple')
-        about_btn.classList.add('submit-btn')
-        about_btn.innerText = '关于'
-        about_btn.addEventListener('click', () => {
-            mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}-${app_config.git_commit}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', ()=>{}, {confirmText: "好"})
+            let about_btn = document.createElement('button')
+            about_btn.classList.add("mdui-btn")
+            about_btn.classList.add('mdui-ripple')
+            about_btn.classList.add('submit-btn')
+            about_btn.innerText = '关于'
+            about_btn.addEventListener('click', () => {
+                mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}-${app_config.git_commit}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', () => {
+                }, {confirmText: "好"})
+            })
+            aim_window.appendChild(about_btn)
+            mdui.mutation();
         })
-        aim_window.appendChild(about_btn)
-        mdui.mutation();
-    })
 
-    document.body.appendChild(new_overlay)
+        document.body.appendChild(new_overlay);
+        $(new_overlay).fadeIn(200);
+    }
 })
 
 setInterval(() => {

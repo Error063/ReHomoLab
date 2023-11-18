@@ -128,7 +128,7 @@ class Detector(threading.Thread):
 class DailyNoteChecker(threading.Thread):
     def run(self):
         while True:
-            if app_config.readConfig('accept_agreement'):
+            if app_config.readConfig('accept_agreement') and int(app_config.readConfig('daily_note_time_delay')) >= 300:
                 try:
                     genshin_note = games.Genshin.dailyNote()['data']
                     showText_genshin = f'树脂：{genshin_note["current_resin"]}/{genshin_note["max_resin"]} {"树脂溢出" if (genshin_note["current_resin"] >= genshin_note["max_resin"]) else "剩余恢复时间：" + str(ceil(int(genshin_note["resin_recovery_time"]) / 60 / 60)) + "小时"}\n每日委托：{genshin_note["finished_task_num"]}/{genshin_note["total_task_num"]} {"委托奖励未领取！" if not genshin_note["is_extra_task_reward_received"] else "全部完成"}\n洞天宝钱：{genshin_note["current_home_coin"]}/{genshin_note["max_home_coin"]}'

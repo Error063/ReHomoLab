@@ -21,6 +21,7 @@ print(current_git_commit)
 
 with open('base.py', encoding='utf8') as f:
     base_code = f.read()
+# print(base_code.replace('in_build = False', 'in_build = True'))
 with open('base.py', encoding='utf8', mode='w') as f:
     f.write(base_code.replace('in_build = False', 'in_build = True'))
 

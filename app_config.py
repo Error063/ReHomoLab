@@ -59,7 +59,7 @@ app_config_value_type = {
 
 },
     'daily_note_time_delay': {
-        'display_string': '每日便笺更新频率（秒）',
+        'display_string': '每日便笺更新频率（单位为秒，数值小于300秒将被视为禁用）',
         'type': 'number',
         'upload_type': "number",
         "is_disabled": False
