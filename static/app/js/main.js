@@ -291,6 +291,9 @@ function showArticle(postId) {
         console.log('Cannot append the new article window because the previous window is not ready or interrupted!')
         return undefined;
     }
+    if(window.geetest_activated){
+        return undefined;
+    }
     let new_overlay = document.createElement('div');
     new_overlay.classList.add('overlay');
     new_overlay.style.display = 'none';
@@ -1071,7 +1074,7 @@ window.addEventListener('load', (e) => {
 
     apiConnect(current_user_api).then((res) => {
         let user = JSON.parse(res);
-        document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname;
+        document.getElementsByClassName('user-nickname')[0].innerHTML = user.nickname.length > 10?user.nickname.substring(0, 10) + '...':user.nickname;
         document.getElementsByClassName('user-uid')[0].innerHTML = 'UID: ' + user.uid;
         document.getElementsByClassName('user-avatar')[0].setAttribute('style', `background-image: url('${user.avatar}');`);
         is_login = user.isLogin;
@@ -1156,7 +1159,7 @@ window.addEventListener("beforeunload", (event) => {
 });
 
 
-document.getElementsByClassName("logout")[0].addEventListener('click', () => {
+$(".logout")[0].addEventListener('click', () => {
     if(app_config.local_config.demo_mode){
         mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
     }else{
@@ -1179,8 +1182,60 @@ document.getElementsByClassName("logout")[0].addEventListener('click', () => {
 
 })
 
+$('.account-manage')[0].addEventListener('click', () => {
+    apiConnect('/api/account?method=exist_list').then((res) => {
+        let existAccount = JSON.parse(res);
+        let selection = document.createElement('select');
+        selection.classList.add('mdui-select');
+        selection.id = 'account-select';
+        selection.setAttribute('mdui-select', "{position: 'bottom'}");
+        for (const uid in existAccount) {
+            selection.innerHTML += `<option value="${uid}" ${existAccount[uid].is_current?'selected':''}>${existAccount[uid].nickname} (${uid})</option>`
+        }
+        mdui.dialog({
+            title: '账号管理',
+            content: `<div style="height: 300px;"><p>选择一个账号以进行操作</p><p>${selection.outerHTML}</p></div>`,
+            buttons: [
+                {
+                    text: '添加',
+                    onClick: () => {
+                        apiConnect('/api/login').then(() => {})
+                    }
+                },
+                {
+                    text: '移除',
+                    onClick: () => {
+                        let uid = $('#account-select')[0].value;
+                        mdui.confirm(`确认移除 ${uid} 吗？`, '提示', () => {
+                            apiConnect(`/api/account?method=remove&uid=${uid}`).then(() => {
+                                load_page('reload')
+                            })
+                        }, () => {}, {
+                            confirmText: "确认",
+                            cancelText: "取消",
+                        })
+                    }
+                },
+                {
+                    text: '切换',
+                    onClick: () => {
+                        let uid = $('#account-select')[0].value;
+                        apiConnect(`/api/account?method=set&uid=${uid}`).then(() => {
+                            load_page('reload')
+                        })
+                    }
+                },
+            ],
+            onOpen: () => {
+                mdui.mutation();
+                $('.mdui-dialog-actions .mdui-btn')[0].style.float = 'left';
+            }
+        })
+    })
+})
+
 setInterval(() => {
-    let windows = document.getElementsByClassName('article-overlay')
+    let windows = $('.article-overlay')
     let detected_window = windows.length;
     if(current_window !== detected_window && current_window < detected_window) {
         console.log('A window had been created!');
@@ -1208,15 +1263,6 @@ setInterval(() => {
     }
     current_window = detected_window;
 }, 500)
-
-// setInterval(() => {
-//     let t = new Date().getTime();
-//     apiConnect(`/app-api/heartbeat?t=${t}`, false).then((res) => {
-//         console.log(`Time delay: ${parseInt(JSON.parse(res)['t']) - t}ms`)
-//     }, (rej) => {
-//         mdui.alert('应用内通讯失败！')
-//     })
-// },500)
 
 setInterval(() => {
     apiConnect('/app-api/connection_test', false).then((res) =>{

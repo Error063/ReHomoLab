@@ -360,7 +360,7 @@ body{
     position: absolute;
     right: 3px;
 }
-span:not(.mdui-menu-item-more, .user-nickname, .user-uid){
+span:not(.mdui-menu-item-more, .user-nickname, .user-uid, .mdui-select-selected){
     margin-left: 10px;
 }
 hr{
@@ -537,6 +537,14 @@ hr{
 .mdui-select-menu{
     border-radius: 10px;
 }
+.mdui-select-open.mdui-select-position-bottom{
+    border-top-right-radius: 10px;
+    border-top-left-radius: 10px;
+}
+.mdui-select-open.mdui-select-position-top{
+    border-bottom-right-radius: 10px;
+    border-bottom-left-radius: 10px;
+}
 .mdui-btn:not(.mdui-btn-icon){
     background-color: rgba(var(--personal-color), 0.5);
     border-radius: 20px;
@@ -556,9 +564,6 @@ hr{
 .setting-choice .mdui-textfield{
     padding: unset !important;
     width: 300px;
-}
-.setting-choice .mdui-textfield-input{
-    padding-left: 10px;
 }
 .setting-choice .mdui-select {
     width: 302px;

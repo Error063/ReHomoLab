@@ -3,7 +3,9 @@ import pprint
 import time
 from functools import wraps
 
+import libmiyoushe
 from flask import Flask, render_template, jsonify, request, redirect, make_response, send_file
+from libmiyoushe import configs
 
 import app_config
 from base import bbs, auth
@@ -99,6 +101,30 @@ def api(actions):
         case 'logout':
             auth.logout()
             return ''
+        case 'account':
+            match request.args.get('method', 'exist_list'):
+                case 'exist_list':
+                    user_dict = dict()
+                    current_uid = libmiyoushe.get_current_user()
+                    for uid in libmiyoushe.getExistUser():
+                        nickname = bbs.User(uid).getNickname()
+                        user_dict[uid] = {
+                            'uid': uid,
+                            'nickname': nickname,
+                            'is_current': str(uid) == str(current_uid)
+                        }
+                    return user_dict
+                case 'set':
+                    uid = request.args.get('uid')
+                    libmiyoushe.set_current_user(uid)
+                    return ''
+                case 'remove':
+                    uid = request.args.get('uid')
+                    configs.clearAccount(uid)
+                    return ''
+                case _:
+                    return '405 Method Not Allowed', 405
+
         case 'homepage':
             page_type = request.args.get('type', 'feed')
             gid = request.args.get('gid', '2')
