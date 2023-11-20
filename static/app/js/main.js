@@ -23,6 +23,7 @@ let is_login = false;
 let app_config;
 let locks = {postcard_render: false, comment_render: false}
 let game_list;
+let just_reload;
 window.geetest_activated = false;
 
 document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
@@ -158,6 +159,7 @@ function load_page(url) {
     article_element.innerHTML = ''
     switch (url) {
         case 'reload':
+            just_reload = true;
             location.reload();
             break;
         case 'back':
@@ -850,6 +852,22 @@ $('.setting-btn')[0].addEventListener('click', () => {
             })
             aim_window.appendChild(submit_btn)
 
+            let close_btn = document.createElement('button')
+            close_btn.classList.add("mdui-btn")
+            close_btn.classList.add('mdui-ripple')
+            close_btn.classList.add('submit-btn')
+            close_btn.innerText = 'Close the app'
+            close_btn.addEventListener('click', () => {
+                mdui.confirm('Do you want to close the app right now?', 'Warning', () => {
+                    apiConnect('/app-api/quit').then(() => {});
+                    window.close();
+                }, () => {}, {
+                    cancelText: 'No',
+                    confirmText: 'Yes'
+                })
+            })
+            aim_window.appendChild(close_btn)
+
             let about_btn = document.createElement('button')
             about_btn.classList.add("mdui-btn")
             about_btn.classList.add('mdui-ripple')
@@ -1036,6 +1054,9 @@ window.addEventListener('load', (e) => {
                 document.body.classList.add('mdui-theme-layout-dark');
                 break;
         }
+        if(app_config.first_open && app_config.local_config.using_flask){
+            mdui.alert('The app are running at Flask mode, some of features are not able in this mode. Before you exit app, you should close it in setting frame.', 'Warning', () => {}, {confirmText: 'OK'})
+        }
     })
 
     apiConnect('/app-api/connection_test', false).then((res) =>{
@@ -1118,6 +1139,22 @@ window.addEventListener('load', (e) => {
         document.getElementsByClassName('loading_outter')[0].classList.add('disabled')
     }, 1500)
 })
+
+window.addEventListener("beforeunload", (event) => {
+    if(!just_reload){
+        // Cancel the event as stated by the standard.
+        event.preventDefault();
+        // Chrome requires returnValue to be set.
+        mdui.confirm('test', 'test', () => {
+            apiConnect('/app-api/quit')
+            window.close()
+        })
+        event.returnValue = "hi";
+    }else{
+        just_reload = false;
+    }
+});
+
 
 document.getElementsByClassName("logout")[0].addEventListener('click', () => {
     if(app_config.local_config.demo_mode){

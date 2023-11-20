@@ -30,7 +30,7 @@ def verify_ua(function, agreement_bypass=False):
             return render_template('agreement.html')
         if ua == base.user_agent:
             return function(*args, **kwargs)
-        elif config['enable_debug']:
+        elif config['enable_debug'] or config['using_flask']:
             return function(*args, **kwargs)
         else:
             return "<h1>该页面无法使用浏览器直接访问</h1>", 403

@@ -15,7 +15,8 @@ app_config_template = {
         'accept_agreement': False,
         'enable_debug': False,
         'default_area': 'ys',
-        'daily_note_time_delay': 300
+        'daily_note_time_delay': 300,
+        'using_flask': False
     }
 }
 
@@ -57,11 +58,17 @@ app_config_value_type = {
         'values_form': '#!from_remote*game_api!#',
         "is_disabled": False
 
-},
+    },
     'daily_note_time_delay': {
         'display_string': '每日便笺更新频率（单位为秒，数值小于300秒将被视为禁用）',
         'type': 'number',
         'upload_type': "number",
+        "is_disabled": False
+    },
+    'using_flask': {
+        'display_string': 'flask as backbone',
+        'type': 'boolean',
+        'upload_type': "boolean",
         "is_disabled": False
     }
 }
