@@ -764,7 +764,7 @@ function showLogin() {
             }
         })
         new_overlay.innerHTML = '<div class="setting-window-outer" style="width: 650px;height: 450px;margin-top: 10%"><div class="setting-window"></div></div>'
-        new_overlay.getElementsByClassName("setting-window")[0].innerHTML = `<div class="mdui-tab mdui-tab-centered" mdui-tab><a id="sms-login" class="mdui-ripple">短信登录</a><a id="pwd-login" class="mdui-ripple">密码登录</a><a id="native-login" class="mdui-ripple">通过米哈游通行证登录</a></div><div class="login-panel"></div>`
+        new_overlay.getElementsByClassName("setting-window")[0].innerHTML = `<div class="mdui-tab mdui-tab-centered" mdui-tab><a id="sms-login" class="mdui-ripple">短信登录</a><a id="pwd-login" class="mdui-ripple">密码登录</a>${!app_config.local_config.using_flask?'<a id="native-login" class="mdui-ripple">通过米哈游通行证登录</a>':''}</div><div class="login-panel"></div>`
         document.body.appendChild(new_overlay);
         $('#pwd-login').on('show.mdui.tab', () => {
             $('.login-panel')[0].innerHTML = `
@@ -933,9 +933,9 @@ function showLogin() {
             })
             mdui.mutation();
         })
-        $('#native-login').on('click', () => {
-            if(app_config.local_config_using_flask){
-                $('.login-panel')[0].innerHTML = `<p>当前某些平台无法通过该方式登录</p>`
+        $('#native-login').on('show.mdui.tab', () => {
+            if(app_config.local_config.using_flask){
+                $('.login-panel')[0].innerHTML = `<p>当前无法通过该方式登录</p>`
             }else{
                 $('.login-panel')[0].innerHTML = `<p>点击下方按钮进行登录</p><button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: 20px;">登录</button>`
                 $('#login-btn').on('click', () => {
@@ -949,17 +949,6 @@ function showLogin() {
         })
         mdui.mutation();
         $(new_overlay).fadeIn(200);
-
-        // apiConnect('/api/login').then(() => {})
-        // setInterval(() => {
-        //     apiConnect(current_user_api).then((res) => {
-        //         let user = JSON.parse(res);
-        //         console.log(user)
-        //         if (user.isLogin) {
-        //             load_page('reload')
-        //         }
-        //     })
-        // }, 500)
     }
 }
 
@@ -1111,21 +1100,24 @@ $('.setting-btn')[0].addEventListener('click', () => {
             })
             aim_window.appendChild(submit_btn)
 
-            let close_btn = document.createElement('button')
-            close_btn.classList.add("mdui-btn")
-            close_btn.classList.add('mdui-ripple')
-            close_btn.classList.add('submit-btn')
-            close_btn.innerText = 'Close the app'
-            close_btn.addEventListener('click', () => {
-                mdui.confirm('Do you want to close the app right now?', 'Warning', () => {
-                    apiConnect('/app-api/quit').then(() => {});
-                    window.close();
-                }, () => {}, {
-                    cancelText: 'No',
-                    confirmText: 'Yes'
+            if(app_config.local_config.using_flask){
+                let close_btn = document.createElement('button')
+                close_btn.classList.add("mdui-btn")
+                close_btn.classList.add('mdui-ripple')
+                close_btn.classList.add('submit-btn')
+                close_btn.innerText = '停止后端服务'
+                close_btn.addEventListener('click', () => {
+                    mdui.confirm('是否停止后端服务?', '提示', () => {
+                        apiConnect('/app-api/quit').then(() => {});
+                        window.close();
+                    }, () => {}, {
+                        cancelText: '否',
+                        confirmText: '是'
+                    })
                 })
-            })
-            aim_window.appendChild(close_btn)
+                aim_window.appendChild(close_btn)
+            }
+
 
             let about_btn = document.createElement('button')
             about_btn.classList.add("mdui-btn")
@@ -1303,7 +1295,7 @@ window.addEventListener('load', (e) => {
         }
         if(app_config.first_open && app_config.local_config.using_flask){
             // mdui.alert('The app are running at Flask mode, some of features are not able in this mode. Before you exit app, you should close it in setting frame or stop the backbone service.', 'Warning', () => {}, {confirmText: 'OK'})
-            mdui.alert('应用当前使用浏览器呈现，在该模式下一些功能无法正常使用。当你想要完全地关闭应用时，请在设置界面中关闭该应用或杀死本程序的后台服务。', '提示', () => {}, {confirmText: 'OK'})
+            mdui.alert('应用当前使用浏览器呈现，在该模式下一些功能无法正常使用。当你想要完全地关闭应用时，请在设置界面中关闭该应用或杀死本程序的后台服务。', '提示', () => {}, {confirmText: '好'})
         }
     })
 
@@ -1390,14 +1382,17 @@ window.addEventListener('load', (e) => {
 
 window.addEventListener("beforeunload", (event) => {
     if((!just_reload) && app_config.local_config.using_flask){
-        // Cancel the event as stated by the standard.
         event.preventDefault();
-        // Chrome requires returnValue to be set.
-        mdui.confirm('test', 'test', () => {
-            apiConnect('/app-api/quit')
+        event.returnValue = "";
+        mdui.confirm('是否停止后端服务?', '提示', () => {
+            apiConnect('/app-api/quit').then((res)=>{
+                window.close()
+            },(rej)=>{
+                window.close()
+            });
+        }, () => {
             window.close()
         })
-        event.returnValue = "hi";
     }else{
         just_reload = false;
     }
