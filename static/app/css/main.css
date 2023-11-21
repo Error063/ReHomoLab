@@ -480,6 +480,9 @@ hr{
     float: right;
     margin-right: 10px;
 }
+.article-actions .mdui-select{
+    margin-left: 30px;
+}
 .article-comment{
     width: calc(100% - 10px);
     height: calc(100% - 90px - 50px);
