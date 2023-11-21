@@ -154,6 +154,48 @@ function apiConnect(url, failed_warning=true) {
     });
 }
 
+function apiConnect_post(url, data, failed_warning=true) {
+    /* 连接api的封装 */
+    return new Promise((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', url);
+        if((typeof data) === 'object'){
+            xhr.setRequestHeader('Content-Type', 'application/json');
+            data = JSON.stringify(data)
+        }else{
+            xhr.setRequestHeader('Content-Type', 'application/x-www-form-urlencoded');
+        }
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                resolve(xhr.responseText);
+            } else {
+                if(failed_warning){
+                    mdui.snackbar({
+                        message: '<span style="color: red;font-weight: bold;font-size: 20px">内容获取失败！</span>',
+                        position: 'right-top',
+                        timeout: 0
+                    });
+                    mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
+                }
+
+                reject(new Error(`Request failed with status ${xhr.status}`));
+            }
+        };
+        xhr.onerror = () => {
+            if(failed_warning) {
+                mdui.snackbar({
+                    message: '<span style="color: red;font-weight: bold;font-size: 20px">网络连接失败！</span>',
+                    position: 'right-top',
+                    timeout: 0
+                });
+                mdui.alert('请检查网络连接或稍后再试!', '无法连接到服务器', ()=>{location.reload();}, {confirmText: "重试"})
+            }
+            reject(new Error('Request failed'));
+        };
+        xhr.send(data);
+    });
+}
+
 function load_page(url) {
     /* 将页面跳转到指定的url或执行指定的操作 */
     article_element.innerHTML = ''
@@ -707,6 +749,220 @@ function showCommentDetail(post_id, reply_id, floor_id) {
     document.body.appendChild(new_overlay)
 }
 
+function showLogin() {
+    if(app_config.local_config.demo_mode){
+        mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
+    }else{
+        let new_overlay = document.createElement('div');
+        new_overlay.classList.add('overlay');
+        new_overlay.style.display = 'none';
+        new_overlay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('overlay')) {
+                $(e.target).fadeOut(200, () => {
+                    e.target.remove();
+                });
+            }
+        })
+        new_overlay.innerHTML = '<div class="setting-window-outer" style="width: 650px;height: 450px;margin-top: 10%"><div class="setting-window"></div></div>'
+        new_overlay.getElementsByClassName("setting-window")[0].innerHTML = `<div class="mdui-tab mdui-tab-centered" mdui-tab><a id="sms-login" class="mdui-ripple">短信登录</a><a id="pwd-login" class="mdui-ripple">密码登录</a><a id="native-login" class="mdui-ripple">通过米哈游通行证登录</a></div><div class="login-panel"></div>`
+        document.body.appendChild(new_overlay);
+        $('#pwd-login').on('show.mdui.tab', () => {
+            $('.login-panel')[0].innerHTML = `
+<div class="mdui-textfield mdui-textfield-floating-label">
+    <label class="mdui-textfield-label">手机号/邮箱</label>
+    <input class="mdui-textfield-input" id="account" type="text"/>
+    <div class="mdui-textfield-error">账号或密码错误</div>
+</div>
+<div class="mdui-textfield mdui-textfield-floating-label">
+    <label class="mdui-textfield-label">密码</label>
+    <input class="mdui-textfield-input" id="password" type="password"/>
+    <div class="mdui-textfield-error">账号或密码错误</div>
+</div>
+<button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: auto;">登录</button>`
+            $('#login-btn').on('click', () => {
+                if($('#account')[0].value.length === 0 || $('#password')[0].value.length === 0){
+                    $('#account')[0].parentElement.classList.add('mdui-textfield-invalid')
+                    $('#password')[0].parentElement.classList.add('mdui-textfield-invalid')
+                    mdui.mutation();
+                }else{
+                    $('#account')[0].parentElement.classList.remove('mdui-textfield-invalid')
+                    $('#password')[0].parentElement.classList.remove('mdui-textfield-invalid')
+                    mdui.mutation();
+                    apiConnect('/api/login?method=mmt').then((res) => {
+                        let mmt_info = JSON.parse(res);
+                        let mmt = mmt_info.mmt_key;
+                        let account = $('#account')[0].value;
+                        let password = $('#password')[0].value;
+                        function login_pwd(account, password, mmt_key, gt_info = null) {
+                            apiConnect_post('/api/login?method=pwd',{
+                                account: account,
+                                password: password,
+                                mmt: mmt_key,
+                                geetest: gt_info===null?{
+                                    version: 'none'
+                                }:gt_info
+                            }).then((res) => {
+                                if(!JSON.parse(res)['resp']){
+                                    $('#password')[0].parentElement.classList.add('mdui-textfield-invalid')
+                                    mdui.mutation();
+                                }else{
+                                    $($('.setting-window-outer')[0].parentElement).fadeOut(200, () => {
+                                        $('.setting-window-outer')[0].parentElement.remove();
+                                        load_page('reload');
+                                    })
+                                }
+                            })
+                        }
+                        if(mmt_info.gt !== undefined && mmt_info.challenge !== undefined){
+                            initGeetest({
+                                gt: mmt_info.gt,
+                                challenge: mmt_info.challenge,
+                                new_captcha: true,
+                                product: 'bind'
+                            }, (captchaObj) => {
+                                captchaObj.onReady(() => {
+                                    captchaObj.verify();
+                                }).onSuccess(() => {
+                                    let result = captchaObj.getValidate();
+                                    let result_send = {
+                                        geetest_challenge: result.geetest_challenge,
+                                        geetest_validate: result.geetest_validate,
+                                        geetest_seccode: result.geetest_seccode,
+                                        version: 'gt3',
+                                    }
+                                    login_pwd(account, password, mmt, result_send)
+                                })
+                            })
+                        }else{
+                            login_pwd(account, password, mmt)
+                        }
+                    })
+                }
+            })
+            mdui.mutation();
+        })
+        $('#sms-login').on('show.mdui.tab', () => {
+            $('.login-panel')[0].innerHTML = `
+<div class="mdui-textfield mdui-textfield-floating-label">
+    <label class="mdui-textfield-label">手机号</label>
+    <input class="mdui-textfield-input" id="account" type="text" style="width: 70%;"/>
+    <div class="mdui-textfield-error">请输入正确的手机号!</div>
+    <button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="sms-btn" style="float: right;" wait-time="60">获取验证码</button>
+</div>
+<div class="mdui-textfield mdui-textfield-floating-label">
+    <label class="mdui-textfield-label">验证码</label>
+    <input class="mdui-textfield-input" id="code" type="text"/>
+    <div class="mdui-textfield-error">验证码错误！</div>
+</div>
+<button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: auto;">登录</button>`
+            $('#sms-btn').on('click', () => {
+                if($('#account')[0].value.length !== 11){
+                    $('#account')[0].parentElement.classList.add('mdui-textfield-invalid')
+                    mdui.mutation();
+                }else{
+                    $('#account')[0].parentElement.classList.remove('mdui-textfield-invalid')
+                    mdui.mutation();
+                    apiConnect('/api/login?method=mmt').then((res) => {
+                        let mmt_info = JSON.parse(res);
+                        let mmt = mmt_info.mmt_key
+                        let account = $('#account')[0].value
+                        function sendSms(account, mmt_key, gt_info = null) {
+                            apiConnect_post('/api/login?method=sms&type=create',{
+                                account: account,
+                                mmt: mmt_key,
+                                geetest: gt_info===null?{
+                                    version: 'none'
+                                }:gt_info
+                            }).then((res) => {
+                                if(!JSON.parse(res)['resp']){
+                                    $('#password')[0].parentElement.classList.add('mdui-textfield-invalid')
+                                    mdui.mutation();
+                                }else{
+                                    $('#send-btn')[0].setAttribute('disabled','')
+                                }
+                            })
+                        }
+                        if(mmt_info.gt !== undefined && mmt_info.challenge !== undefined){
+                            initGeetest({
+                                gt: mmt_info.gt,
+                                challenge: mmt_info.challenge,
+                                new_captcha: true,
+                                product: 'bind'
+                            }, (captchaObj) => {
+                                captchaObj.onReady(() => {
+                                    captchaObj.verify();
+                                }).onSuccess(() => {
+                                    let result = captchaObj.getValidate();
+                                    let result_send = {
+                                        geetest_challenge: result.geetest_challenge,
+                                        geetest_validate: result.geetest_validate,
+                                        geetest_seccode: result.geetest_seccode,
+                                        version: 'gt3',
+                                    }
+                                    sendSms(account, mmt, result_send)
+                                })
+                            })
+                        }else{
+                            sendSms(account, mmt)
+                        }
+                    })
+                }
+            });
+            $('#login-btn').on('click', () => {
+                if($('#code')[0].value === ''){
+                    $('#code')[0].parentElement.classList.add('mdui-textfield-invalid')
+                    mdui.mutation();
+                }else {
+                    let account = $('#account')[0].value;
+                    let code = $('#code')[0].value;
+                    apiConnect_post('/api/login?method=sms&type=verify', {
+                        account: account,
+                        code: code
+                    }).then((res) => {
+                        if(!JSON.parse(res)['resp']){
+                            $('#code')[0].parentElement.classList.add('mdui-textfield-invalid')
+                            mdui.mutation();
+                        }else{
+                            $($('.setting-window-outer')[0].parentElement).fadeOut(200, () => {
+                                $('.setting-window-outer')[0].parentElement.remove();
+                                load_page('reload');
+                            })
+                        }
+                    })
+                }
+            })
+            mdui.mutation();
+        })
+        $('#native-login').on('click', () => {
+            if(app_config.local_config_using_flask){
+                $('.login-panel')[0].innerHTML = `<p>当前某些平台无法通过该方式登录</p>`
+            }else{
+                $('.login-panel')[0].innerHTML = `<p>点击下方按钮进行登录</p><button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: 20px;">登录</button>`
+                $('#login-btn').on('click', () => {
+                    apiConnect('/api/login').then(() => {
+                        $($('.setting-window-outer')[0].parentElement).fadeOut(200, () => {
+                            $('.setting-window-outer')[0].parentElement.remove();
+                        })
+                    })
+                })
+            }
+        })
+        mdui.mutation();
+        $(new_overlay).fadeIn(200);
+
+        // apiConnect('/api/login').then(() => {})
+        // setInterval(() => {
+        //     apiConnect(current_user_api).then((res) => {
+        //         let user = JSON.parse(res);
+        //         console.log(user)
+        //         if (user.isLogin) {
+        //             load_page('reload')
+        //         }
+        //     })
+        // }, 500)
+    }
+}
+
 function resolutionChange(i) {
     let resolutions = document.getElementsByName('resolution');
     let videoClass = document.getElementsByClassName('video');
@@ -1021,20 +1277,8 @@ window.addEventListener('click', (e) => {
             showArticle(post_id);
             break;
         case "user-info":
-            if(app_config.local_config.demo_mode){
-                mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
-            }else if(!is_login){
-                console.log("not login")
-                apiConnect('/api/login').then(() => {})
-                setInterval(() => {
-                    apiConnect(current_user_api).then((res) => {
-                        let user = JSON.parse(res);
-                        console.log(user)
-                        if (user.isLogin) {
-                            load_page('reload')
-                        }
-                    })
-                }, 500)
+            if(!element.hasAttribute('login')) {
+                showLogin();
             }
             break;
         case 'ql-fold':
@@ -1058,7 +1302,8 @@ window.addEventListener('load', (e) => {
                 break;
         }
         if(app_config.first_open && app_config.local_config.using_flask){
-            mdui.alert('The app are running at Flask mode, some of features are not able in this mode. Before you exit app, you should close it in setting frame.', 'Warning', () => {}, {confirmText: 'OK'})
+            // mdui.alert('The app are running at Flask mode, some of features are not able in this mode. Before you exit app, you should close it in setting frame or stop the backbone service.', 'Warning', () => {}, {confirmText: 'OK'})
+            mdui.alert('应用当前使用浏览器呈现，在该模式下一些功能无法正常使用。当你想要完全地关闭应用时，请在设置界面中关闭该应用或杀死本程序的后台服务。', '提示', () => {}, {confirmText: 'OK'})
         }
     })
 
@@ -1144,7 +1389,7 @@ window.addEventListener('load', (e) => {
 })
 
 window.addEventListener("beforeunload", (event) => {
-    if(!just_reload){
+    if((!just_reload) && app_config.local_config.using_flask){
         // Cancel the event as stated by the standard.
         event.preventDefault();
         // Chrome requires returnValue to be set.
@@ -1199,7 +1444,7 @@ $('.account-manage')[0].addEventListener('click', () => {
                 {
                     text: '添加',
                     onClick: () => {
-                        apiConnect('/api/login').then(() => {})
+                        showLogin();
                     }
                 },
                 {

@@ -23,9 +23,11 @@ else:
 replace_list = [[r'<a href="https://(?:www\.miyoushe|bbs\.mihoyo|m\.miyoushe)\.com/.+?/article/(\d+)".+?target="_blank"', '<a onclick=showArticle({}) ']]
 
 
-def verify_ua(function, agreement_bypass=False):
+def before_request(function, agreement_bypass=False):
     @wraps(function)
     def wrapper(*args, **kwargs):
+        print(request.url)
+        pprint.pprint(request.data.decode())
         config = app_config.readMutiConfig()
         ua = str(request.user_agent.string)
         if (not config['accept_agreement']) or agreement_bypass:
@@ -36,13 +38,12 @@ def verify_ua(function, agreement_bypass=False):
             return function(*args, **kwargs)
         else:
             return "<h1>该页面无法使用浏览器直接访问</h1>", 403
-            # raise Exception('Authentication error')
 
     return wrapper
 
 
 @app.route('/dynamic_css')
-@verify_ua
+@before_request
 def dynamic_css():
     color_set = base.systemColorSet()[0]
     insert_css_text = ':root{--personal-color: ' + color_set + ' !important;}'
@@ -62,19 +63,19 @@ def dynamic_css():
 
 
 @app.route('/favicon.ico')
-@verify_ua
+@before_request
 def favicon():
     return send_file('./static/appicon.ico')
 
 
 @app.route('/<game>')
-@verify_ua
+@before_request
 def game_main(game):
     return render_template('homepage.html')
 
 
 @app.route('/<game>/forum')
-@verify_ua
+@before_request
 def forum_page(game):
     return render_template('homepage.html')
 
@@ -85,7 +86,7 @@ def vote(game):
 
 
 @app.route('/api/<actions>', methods=['GET', 'POST'])
-@verify_ua
+@before_request
 def api(actions):
     match actions:
         case 'login':
@@ -95,6 +96,42 @@ def api(actions):
                         login_page = f.read()
                     auth.loginByWeb(gui_page=login_page, open_webview=False)
                     return ''
+                case 'mmt':
+                    mmt = auth.createLoginMmt()
+                    return mmt
+                case 'pwd':
+                    if request.method.lower() == 'post':
+                        login_json = request.json
+                        account = login_json['account']
+                        password = login_json['password']
+                        mmt = login_json['mmt']
+                        geetest = login_json['geetest']
+                        login_ticket = auth.getLoginTicketByPassword(account, password, mmt, True, geetest)['token']
+                        if login_ticket == '':
+                            return {'resp': False}
+                        else:
+                            return {'resp': auth.login(login_ticket)}
+                    else:
+                        return '405 Method Not Allowed', 405
+                case 'sms':
+                    if request.method.lower() == 'post':
+                        if request.args.get('type') == 'create':
+                            login_json = request.json
+                            account = login_json['account']
+                            mmt = login_json['mmt']
+                            geetest = login_json['geetest']
+                            return {'resp': auth.getLoginTicketBySms.createSms(account, mmt, geetest)}
+                        elif request.args.get('type') == 'verify':
+                            login_json = request.json
+                            account = login_json['account']
+                            code = login_json['code']
+                            login_ticket = auth.getLoginTicketBySms.verifySms(account, code)['token']
+                            if login_ticket == '':
+                                return {'resp': False}
+                            else:
+                                return {'resp': auth.login(login_ticket)}
+                    else:
+                        return '405 Method Not Allowed', 405
                 case _:
                     return ''
 
@@ -259,7 +296,7 @@ def app_api(actions):
 
 
 @app.route('/')
-@verify_ua
+@before_request
 def main():
     return redirect(f'/{app_config.readConfig("default_area")}')
 
