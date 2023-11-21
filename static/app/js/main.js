@@ -205,12 +205,15 @@ function load_page(url) {
             location.reload();
             break;
         case 'back':
+            just_reload = true;
             history.back();
             break;
         case 'home':
+            just_reload = true;
             location.href = `/${game}`
             break;
         default:
+            just_reload = true;
             location.href = url
             break;
     }
