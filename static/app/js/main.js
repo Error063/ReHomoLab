@@ -569,18 +569,13 @@ function showArticle(postId) {
                                 captchaObj.verify();
                             }).onSuccess(function(){
                                 let result = captchaObj.getValidate();
-                                let verify_xhr = new XMLHttpRequest();
-                                verify_xhr.open('post', '/api/validate?method=verify')
-                                verify_xhr.onload = () => {
-                                    renderPage(postId);
-                                }
-                                verify_xhr.setRequestHeader('Content-Type', 'application/json')
-                                let result_send = {
+                                apiConnect_post('/api/validate?method=verify', {
                                     geetest_challenge: result.geetest_challenge,
                                     geetest_validate: result.geetest_validate,
                                     geetest_seccode: result.geetest_seccode,
-                                }
-                                verify_xhr.send(JSON.stringify(result_send))
+                                }).then(() => {
+                                    renderPage(postId);
+                                })
                             }).onError(function(){
                                 mdui.alert('验证码加载失败！', '错误', () => {
                                     load_page('reload')
