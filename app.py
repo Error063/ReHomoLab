@@ -130,25 +130,40 @@ class Detector(threading.Thread):
 
 class DailyNoteChecker(threading.Thread):
     def run(self):
-        while True:
-            if app_config.readConfig('accept_agreement') and int(app_config.readConfig('daily_note_time_delay')) >= 300 and not app_config.readConfig('using_flask'):
-                try:
-                    genshin_note = games.Genshin.dailyNote()['data']
-                    showText_genshin = f'树脂：{genshin_note["current_resin"]}/{genshin_note["max_resin"]} {"树脂溢出" if (genshin_note["current_resin"] >= genshin_note["max_resin"]) else "剩余恢复时间：" + str(ceil(int(genshin_note["resin_recovery_time"]) / 60 / 60)) + "小时"}\n每日委托：{genshin_note["finished_task_num"]}/{genshin_note["total_task_num"]} {"委托奖励未领取！" if not genshin_note["is_extra_task_reward_received"] else "全部完成"}\n洞天宝钱：{genshin_note["current_home_coin"]}/{genshin_note["max_home_coin"]}'
-                    genshin_expedition_ongoing = 0
-                    genshin_expedition_finished = 0
-                    for expedition in genshin_note['expeditions']:
-                        match expedition['status']:
-                            case 'Ongoing':
-                                genshin_expedition_ongoing += 1
-                            case 'Finished':
-                                genshin_expedition_finished += 1
-                    showText_genshin += f'\n探索派遣：{genshin_note["current_expedition_num"]}/{genshin_note["max_expedition_num"]} 已完成：{genshin_expedition_finished}；正在探索：{genshin_expedition_ongoing}'
-                    icon.notify(showText_genshin, "每日便笺：原神")
-                except:
-                    icon.notify('内容获取失败！', "每日便笺：原神")
-                time.sleep(int(app_config.readConfig('daily_note_time_delay')) - 30)
-            time.sleep(30)
+        allow_send = False
+        send_method = 'none'
+        if platform.system().lower() == 'linux' and os.system(r'which notify-send') == 0:
+            allow_send = True
+            send_method = 'linux'
+        elif platform.system().lower() == 'windows':
+            allow_send = True
+            send_method = 'windows'
+        if allow_send:
+            while True:
+                if app_config.readConfig('accept_agreement') and int(app_config.readConfig('daily_note_time_delay')) >= 300:
+                    try:
+                        genshin_note = games.Genshin.dailyNote()['data']
+                        showText_genshin = f'树脂：{genshin_note["current_resin"]}/{genshin_note["max_resin"]} {"树脂溢出" if (genshin_note["current_resin"] >= genshin_note["max_resin"]) else "剩余恢复时间：" + str(ceil(int(genshin_note["resin_recovery_time"]) / 60 / 60)) + "小时"}\n每日委托：{genshin_note["finished_task_num"]}/{genshin_note["total_task_num"]} {"委托奖励未领取！" if not genshin_note["is_extra_task_reward_received"] else "全部完成"}\n洞天宝钱：{genshin_note["current_home_coin"]}/{genshin_note["max_home_coin"]}'
+                        genshin_expedition_ongoing = 0
+                        genshin_expedition_finished = 0
+                        for expedition in genshin_note['expeditions']:
+                            match expedition['status']:
+                                case 'Ongoing':
+                                    genshin_expedition_ongoing += 1
+                                case 'Finished':
+                                    genshin_expedition_finished += 1
+                        showText_genshin += f'\n探索派遣：{genshin_note["current_expedition_num"]}/{genshin_note["max_expedition_num"]} 已完成：{genshin_expedition_finished}；正在探索：{genshin_expedition_ongoing}'
+                    except:
+                        showText_genshin = '内容获取失败！'
+                    match send_method:
+                        case 'windows':
+                            icon.notify(showText_genshin, "每日便笺：原神")
+                        case 'linux':
+                            os.system(f"notify-send 每日便笺：原神 '{showText_genshin}' -t 10000")
+                    time.sleep(int(app_config.readConfig('daily_note_time_delay')) - 30)
+                time.sleep(30)
+        else:
+            print('This system is not support notify send')
 
 
 if __name__ == '__main__':
@@ -163,9 +178,9 @@ if __name__ == '__main__':
         icon = pystray.Icon("name", image, "Re: HoMoLab", menu)
         tray_thread = threading.Thread(target=icon.run)
         tray_thread.start()
+        dnc = DailyNoteChecker()
+        dnc.start()
         if not app_config.readConfig('using_flask'):
-            dnc = DailyNoteChecker()
-            dnc.start()
             openWindow()
             detector = Detector()
             detector.start()
