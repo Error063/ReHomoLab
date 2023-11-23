@@ -138,6 +138,8 @@ class DailyNoteChecker(threading.Thread):
         elif platform.system().lower() == 'windows':
             allow_send = True
             send_method = 'windows'
+
+
         if allow_send:
             while True:
                 if app_config.readConfig('accept_agreement') and int(app_config.readConfig('daily_note_time_delay')) >= 300:

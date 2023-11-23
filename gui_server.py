@@ -233,6 +233,22 @@ def api(actions):
                 'is_last': comment.isLastFlag
             }
 
+        case 'root_comment':
+            reply_id = request.args.get('reply_id')
+            post_id = request.args.get('post_id')
+            return bbs.RootComment(post_id, reply_id).comment
+
+        case 'sub_comment':
+            floor_id = request.args.get('floor_id')
+            post_id = request.args.get('post_id')
+            last_id = request.args.get('last_id', '0')
+            comment = bbs.SubComments(post_id, floor_id, last_id=last_id)
+            return {
+                'comments': comment.comments,
+                'is_last': comment.isLastFlag,
+                'last_id': comment.last_id
+            }
+
         case 'validate':
             match request.args.get('method', 'create'):
                 case 'create':

@@ -31,3 +31,6 @@ body:not(.ql-fold){
 .mdui-dialog-content{
     color: #fff !important;
 }
+#right::-webkit-scrollbar-thumb, .article-main::-webkit-scrollbar-thumb, .article-comment::-webkit-scrollbar-thumb ,.reply-detail-window::-webkit-scrollbar-thumb, .setting-window::-webkit-scrollbar-thumb  {
+    background-color: rgba(255,255,255,0.6) !important;
+}

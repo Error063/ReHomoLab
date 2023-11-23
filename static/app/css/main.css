@@ -70,7 +70,7 @@ body{
 }
 #right::-webkit-scrollbar-thumb {
     border-radius: 10px;
-
+    background-color: rgba(0,0,0,0.6);
 }
 #right::-webkit-scrollbar-track{
     margin: 5px;
@@ -278,7 +278,7 @@ body{
 }
 .article-main::-webkit-scrollbar-thumb {
     border-radius: 10px;
-
+    background-color: rgba(0,0,0,0.6);
 }
 .article-main::-webkit-scrollbar-track{
     margin: 5px;
@@ -298,6 +298,9 @@ body{
     border-radius: 5px;
 }
 .ql-editor{
+    white-space: unset;
+}
+.ql-editor:not(.comment-main){
     overflow: unset !important;
     max-width: 600px;
     margin: 0 auto;
@@ -493,7 +496,7 @@ hr{
 }
 .article-comment::-webkit-scrollbar-thumb {
     border-radius: 10px;
-
+    background-color: rgba(0,0,0,0.6);
 }
 .article-comment::-webkit-scrollbar-track{
     margin: 5px;
@@ -534,6 +537,14 @@ hr{
     background-color: rgba(var(--personal-color), 0.5);
     border-radius: 10px;
     padding: 10px;
+    overflow: auto;
+}
+.reply-detail-window::-webkit-scrollbar-thumb, .setting-window::-webkit-scrollbar-thumb{
+    border-radius: 10px;
+    background-color: rgba(0,0,0,0.6);
+}
+.reply-detail-window::-webkit-scrollbar-track, .setting-window::-webkit-scrollbar-track{
+    margin: 5px;
 }
 .release-time {
     text-align: left;

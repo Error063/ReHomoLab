@@ -736,15 +736,57 @@ function renderCommentsTree(article_comment) {
 }
 
 function showCommentDetail(post_id, reply_id, floor_id) {
+    // 楼中楼-未完工
     let new_overlay = document.createElement('div');
+    new_overlay.style.display = 'none';
     new_overlay.classList.add('overlay');
     new_overlay.addEventListener('click', (e) => {
         if(e.target.classList.contains('overlay')){
-            e.target.remove();
+            $(e.target).fadeOut(200, () => {
+                e.target.remove();
+            });
         }
     })
-    new_overlay.innerHTML = '<div class="reply-detail-window-outer"><div class="reply-detail-window"></div></div>'
+    new_overlay.innerHTML = '<div class="reply-detail-window-outer"><div class="reply-detail-window"><div class="comments-main" style="width: 60%;margin: auto;"></div></div></div>';
+
+    let aim_window = new_overlay.getElementsByClassName("comments-main")[0];
+    apiConnect(`/api/root_comment?post_id=${post_id}&reply_id=${reply_id}`).then((res) => {
+        let root_comment_obj = JSON.parse(res);
+        aim_window.innerHTML = `
+<div class="piece-reply root-reply mdui-ripple mdui-hoverable" reply_id="${reply_id}" floor_id="${floor_id}" post_id="${post_id}">
+    <div class="reply-user">
+        <img class="reply-user-avatar" src="${root_comment_obj.avatar}">
+        <div class="reply-user-nickname">${root_comment_obj.username}</div>
+    </div>
+    <div class="comment-main ql-editor">
+        ${root_comment_obj.content}
+    </div>
+</div>` + aim_window.innerHTML
+    })
+    apiConnect(`/api/sub_comment?post_id=${post_id}&floor_id=${floor_id}&last_id=0`).then((res) => {
+        let sub_comments = document.createElement('div');
+        sub_comments.classList.add('sub-comments')
+        sub_comments.style.marginTop = '20px'
+        let comment_obj = JSON.parse(res);
+        sub_comments.innerHTML = '<h3 style="margin: 10px">更多评论</h3>'
+        for (const comment of comment_obj.comments) {
+            sub_comments.innerHTML += `
+<div class="piece-reply sub-reply mdui-ripple mdui-hoverable" reply_id="${comment.reply_id}" post_id="${comment.post_id}">
+    <div class="reply-user">
+        <img class="reply-user-avatar" src="${comment.avatar}">
+        <div class="reply-user-nickname">${comment.username}</div>
+    </div>
+    <div class="comment-main ql-editor">
+        ${comment.content}
+    </div>
+</div>`
+        }
+
+        aim_window.appendChild(sub_comments)
+    })
+
     document.body.appendChild(new_overlay)
+    $(new_overlay).fadeIn(200)
 }
 
 function showLogin() {
@@ -776,7 +818,7 @@ function showLogin() {
     <input class="mdui-textfield-input" id="password" type="password"/>
     <div class="mdui-textfield-error">账号或密码错误</div>
 </div>
-<button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: auto;">登录</button>`
+<button class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: auto;">登录</button>`
             $('#login-btn').on('click', () => {
                 if($('#account')[0].value.length === 0 || $('#password')[0].value.length === 0){
                     $('#account')[0].parentElement.classList.add('mdui-textfield-invalid')
@@ -852,7 +894,7 @@ function showLogin() {
     <input class="mdui-textfield-input" id="code" type="text"/>
     <div class="mdui-textfield-error">验证码错误！</div>
 </div>
-<button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: auto;">登录</button>`
+<button class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: auto;">登录</button>`
             $('#sms-btn').on('click', () => {
                 if($('#account')[0].value.length !== 11){
                     $('#account')[0].parentElement.classList.add('mdui-textfield-invalid')
@@ -935,7 +977,7 @@ function showLogin() {
             if(app_config.local_config.using_flask){
                 $('.login-panel')[0].innerHTML = `<p>当前无法通过该方式登录</p>`
             }else{
-                $('.login-panel')[0].innerHTML = `<p>点击下方按钮进行登录</p><button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: 20px;">登录</button>`
+                $('.login-panel')[0].innerHTML = `<p>点击下方按钮进行登录</p><button class="mdui-btn mdui-btn-block mdui-color-theme-accent mdui-ripple" id="login-btn" style="margin: 20px;">登录</button>`
                 $('#login-btn').on('click', () => {
                     apiConnect('/api/login').then(() => {
                         $($('.setting-window-outer')[0].parentElement).fadeOut(200, () => {
@@ -1050,6 +1092,7 @@ $('.setting-btn')[0].addEventListener('click', () => {
             submit_btn.classList.add("mdui-btn")
             submit_btn.classList.add('mdui-ripple')
             submit_btn.classList.add('submit-btn')
+            submit_btn.classList.add('mdui-btn-block')
             submit_btn.innerText = '保存设置'
             submit_btn.addEventListener('click', () => {
                 apiConnect('/app-api/get_settings').then((res) => {
@@ -1103,6 +1146,7 @@ $('.setting-btn')[0].addEventListener('click', () => {
                 close_btn.classList.add("mdui-btn")
                 close_btn.classList.add('mdui-ripple')
                 close_btn.classList.add('submit-btn')
+                close_btn.classList.add('mdui-btn-block')
                 close_btn.innerText = '停止后端服务'
                 close_btn.addEventListener('click', () => {
                     mdui.confirm('是否停止后端服务?', '提示', () => {
@@ -1121,6 +1165,7 @@ $('.setting-btn')[0].addEventListener('click', () => {
             about_btn.classList.add("mdui-btn")
             about_btn.classList.add('mdui-ripple')
             about_btn.classList.add('submit-btn')
+            about_btn.classList.add('mdui-btn-block')
             about_btn.innerText = '关于'
             about_btn.addEventListener('click', () => {
                 mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}</p><p style="font-size: 12px; ">提交：${app_config.git_commit}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', () => {
