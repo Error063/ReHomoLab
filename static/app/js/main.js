@@ -1187,7 +1187,7 @@ $('#forum-info')[0].addEventListener('click', () => {
             if (e.target.classList.contains('overlay')) {
                 $('.forum-select-outer').animate({
                     left: '-=200px'
-                }, 50, () => {
+                }, 200, 'swing', () => {
                     $(e.target).fadeOut(100, () => {
                         e.target.remove();
                     });
@@ -1211,22 +1211,9 @@ $('#forum-info')[0].addEventListener('click', () => {
 
         document.body.appendChild(new_overlay);
         $(new_overlay).fadeIn(100, () => {
-            let forum_select_outer = $('.forum-select-outer')
-            forum_select_outer.animate({
-                left: '+=100px'
-            }, 40);
-            forum_select_outer.animate({
-                left: '+=50px'
-            }, 60);
-            forum_select_outer.animate({
-                left: '+=25px'
-            }, 70);
-            forum_select_outer.animate({
-                left: '+=13px'
-            }, 80)
-            forum_select_outer.animate({
-                left: '+=12px'
-            }, 90)
+            $('.forum-select-outer').animate({
+                left: '+=200px'
+            }, 200, 'swing')
         });
     }
 })
