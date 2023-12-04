@@ -14,8 +14,6 @@ body{
     display: none;
 }
 #left {
-    /*height: -webkit-fill-available;*/
-    /*height: -moz-available;*/
     height: 100%;
     position: fixed;
     top: 50px;
@@ -40,7 +38,7 @@ body{
 }
 #topbar *:not(button,i,span){
     float: left;
-    margin-top: 10px;
+    /*margin-top: 10px;*/
 }
 #topbar i{
     font-size: 22px;
@@ -49,18 +47,29 @@ body{
     position: absolute;
     top: 0;
     left: 20px;
+    margin-top: 10px;
+}
+#forum-info{
+    background-color: rgba(var(--personal-color), 0.2);
+    padding: 5px;
+    border-radius: 5px;
+}
+#forum-name{
+    line-height: 2;
+    font-size: 18px;
+    margin-left: 15px;
+    margin-right: 10px;
 }
 .topbar-right{
     position: absolute;
     top: 0;
     right: 20px;
+    margin-top: 10px;
 }
 #right{
     position: absolute;
     right: 0;
     top: 60px;
-    /*height: -webkit-fill-available;*/
-    /*height: -moz-available;*/
     height: 100%;
     width: calc(100% - 200px);
     border-radius: 20px 20px 0 0;
@@ -112,8 +121,6 @@ body{
     background-size: cover;
     height: 35px;
     width: 35px;
-    margin: 0 10px 10px 0;
-    margin-top: 0 !important;
     border-radius: 5px;
 }
 .postCard{
@@ -523,6 +530,13 @@ hr{
 .piece-reply .reply-user-nickname {
     margin-left: 50px;
 }
+.forum-select-outer{
+    position: absolute;
+    left: -200px;
+    height: 100%;
+    width: 200px;
+    background-color: white;
+}
 .reply-detail-window-outer, .setting-window-outer{
     width: 60%;
     height: 80%;
@@ -538,6 +552,16 @@ hr{
     border-radius: 10px;
     padding: 10px;
     overflow: auto;
+}
+.forum-select{
+    width: 100%;
+    height: 100%;
+    background-color: rgba(var(--personal-color), 0.5);
+    padding: 10px;
+    overflow: auto;
+}
+.forum-select .forum-info *{
+    float: left;
 }
 .reply-detail-window::-webkit-scrollbar-thumb, .setting-window::-webkit-scrollbar-thumb{
     border-radius: 10px;

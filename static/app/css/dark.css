@@ -14,8 +14,11 @@ body:not(.ql-fold){
 .overlay-window-wrapper {
     background-color: rgba(var(--personal-color), 0.0) !important;
 }
-.loading_outter, .reply-detail-window-outer, .setting-window-outer{
+.loading_outter, .reply-detail-window-outer, .setting-window-outer, .forum-select-outer{
     background-color: black !important;
+}
+.forum-select{
+    background-color: rgba(255, 255, 255, 0.1) !important;
 }
 .loading {
     background-color: rgba(255, 255, 255, 0) !important;

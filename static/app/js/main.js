@@ -26,7 +26,6 @@ let game_list;
 let just_reload;
 window.geetest_activated = false;
 
-document.querySelector('#forum-logo').setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
 document.querySelector('#recommend').setAttribute('onclick', `load_page('/${game}')`)
 
 if (location.href.split('/').length <= 4){
@@ -885,7 +884,7 @@ function showLogin() {
             $('.login-panel')[0].innerHTML = `
 <div class="mdui-textfield mdui-textfield-floating-label">
     <label class="mdui-textfield-label">手机号</label>
-    <input class="mdui-textfield-input" id="account" type="text" style="width: 70%;"/>
+    <input class="mdui-textfield-input" id="account" type="text" style="width: 70%;float: left;"/>
     <div class="mdui-textfield-error">请输入正确的手机号!</div>
     <button class="mdui-btn mdui-color-theme-accent mdui-ripple" id="sms-btn" style="float: right;" wait-time="60">获取验证码</button>
 </div>
@@ -1092,7 +1091,6 @@ $('.setting-btn')[0].addEventListener('click', () => {
             submit_btn.classList.add("mdui-btn")
             submit_btn.classList.add('mdui-ripple')
             submit_btn.classList.add('submit-btn')
-            submit_btn.classList.add('mdui-btn-block')
             submit_btn.innerText = '保存设置'
             submit_btn.addEventListener('click', () => {
                 apiConnect('/app-api/get_settings').then((res) => {
@@ -1146,7 +1144,6 @@ $('.setting-btn')[0].addEventListener('click', () => {
                 close_btn.classList.add("mdui-btn")
                 close_btn.classList.add('mdui-ripple')
                 close_btn.classList.add('submit-btn')
-                close_btn.classList.add('mdui-btn-block')
                 close_btn.innerText = '停止后端服务'
                 close_btn.addEventListener('click', () => {
                     mdui.confirm('是否停止后端服务?', '提示', () => {
@@ -1165,7 +1162,6 @@ $('.setting-btn')[0].addEventListener('click', () => {
             about_btn.classList.add("mdui-btn")
             about_btn.classList.add('mdui-ripple')
             about_btn.classList.add('submit-btn')
-            about_btn.classList.add('mdui-btn-block')
             about_btn.innerText = '关于'
             about_btn.addEventListener('click', () => {
                 mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}</p><p style="font-size: 12px; ">提交：${app_config.git_commit}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', () => {
@@ -1177,6 +1173,61 @@ $('.setting-btn')[0].addEventListener('click', () => {
 
         document.body.appendChild(new_overlay);
         $(new_overlay).fadeIn(200);
+    }
+})
+
+$('#forum-info')[0].addEventListener('click', () => {
+    if(app_config.local_config.demo_mode){
+        mdui.alert("体验模式下无法使用该功能！", "功能受限", () => {}, {confirmText: "好"});
+    }else {
+        let new_overlay = document.createElement('div');
+        new_overlay.classList.add('overlay');
+        new_overlay.style.display = 'none'
+        new_overlay.addEventListener('click', (e) => {
+            if (e.target.classList.contains('overlay')) {
+                $('.forum-select-outer').animate({
+                    left: '-=200px'
+                }, 50, () => {
+                    $(e.target).fadeOut(100, () => {
+                        e.target.remove();
+                    });
+                })
+
+            }
+        })
+        let forum_select_outer = document.createElement('div')
+        forum_select_outer.classList.add('forum-select-outer')
+        let forum_select = document.createElement('div')
+        forum_select.classList.add('forum-select')
+        forum_select_outer.appendChild(forum_select)
+        new_overlay.appendChild(forum_select_outer)
+
+        for(let item of game_list){
+            forum_select.innerHTML += `<div id="forum-info" onclick="load_page('/${item[3]}')" style="margin: 10px;">
+                <div id="forum-logo" style="background-image: url('https://upload-bbs.mihoyo.com/game/${item[3]}/app_icon.png');"></div>
+                <div id="forum-name">${item[0]}</div>
+            </div>`
+        }
+
+        document.body.appendChild(new_overlay);
+        $(new_overlay).fadeIn(100, () => {
+            let forum_select_outer = $('.forum-select-outer')
+            forum_select_outer.animate({
+                left: '+=100px'
+            }, 40);
+            forum_select_outer.animate({
+                left: '+=50px'
+            }, 60);
+            forum_select_outer.animate({
+                left: '+=25px'
+            }, 70);
+            forum_select_outer.animate({
+                left: '+=13px'
+            }, 80)
+            forum_select_outer.animate({
+                left: '+=12px'
+            }, 90)
+        });
     }
 })
 
@@ -1223,18 +1274,18 @@ window.addEventListener('contextmenu', (e) => {
         y = winHeight - menuHeight >= y ? y : winHeight - menuHeight;
         menu.style.top = y + 'px';
         menu.style.left = x + 'px';
-        if (x > (winWidth - menuWidth - submenu.offsetWidth)) {  //处理子菜单x轴溢出
-            submenu.style.left = `-${submenu.offsetWidth}px`;
-        } else {
-            submenu.style.left = '';
-            submenu.style.right = `-${submenu.offsetWidth}px`;
-        }
-        if (y > (winHeight - menuHeight - submenu.offsetHeight)) {  //处理子菜单y轴溢出
-            submenu.style.top = `-${submenu.offsetHeight - 15}px`;
-            // submenu.style.top = `-${-winHeight + submenu.offsetHeight}px`;
-        } else {
-            submenu.style.top = '-35px';
-        }
+        // if (x > (winWidth - menuWidth - submenu.offsetWidth)) {  //处理子菜单x轴溢出
+        //     submenu.style.left = `-${submenu.offsetWidth}px`;
+        // } else {
+        //     submenu.style.left = '';
+        //     submenu.style.right = `-${submenu.offsetWidth}px`;
+        // }
+        // if (y > (winHeight - menuHeight - submenu.offsetHeight)) {  //处理子菜单y轴溢出
+        //     submenu.style.top = `-${submenu.offsetHeight - 15}px`;
+        //     // submenu.style.top = `-${-winHeight + submenu.offsetHeight}px`;
+        // } else {
+        //     submenu.style.top = '-35px';
+        // }
         menu.classList.add('active');
     } else if (type === 'postCard') {  //文章卡片右击菜单样式
         if ('collected' in element.attributes) {
@@ -1337,7 +1388,7 @@ window.addEventListener('load', (e) => {
                 break;
         }
         if(app_config.first_open && app_config.local_config.using_flask){
-            // mdui.alert('The app are running at Flask mode, some of features are not able in this mode. Before you exit app, you should close it in setting frame or stop the backbone service.', 'Warning', () => {}, {confirmText: 'OK'})
+            // mdui.alert('The app are running at Flask mode, some of the features are not able in this mode. Before you exit app, you should close it in setting frame or stop the backbone service.', 'Warning', () => {}, {confirmText: 'OK'})
             mdui.alert('应用当前使用浏览器呈现，在该模式下一些功能无法正常使用。当你想要完全地关闭应用时，请在设置界面中关闭该应用或杀死本程序的后台服务。', '提示', () => {}, {confirmText: '好'})
         }
     })
@@ -1404,11 +1455,16 @@ window.addEventListener('load', (e) => {
         e.preventDefault();
     });
     apiConnect(game_api).then((res) => {
-        let game = JSON.parse(res);
-        game_list = game;
-        if (game.length > 0) {
-            for (let i = 0; i < game.length; i++) {
-                game_element.innerHTML += `<div class="submenu__item" onclick="load_page('/${game[i][3]}')">${game[i][0]}</div>`
+        game_list = JSON.parse(res);
+        // game_list = game_raw;
+        if (game_list.length > 0) {
+            for (let i = 0; i < game_list.length; i++) {
+                if(game_list[i][3] === game){
+                    $('#forum-logo')[0].setAttribute('style', `background-image: url('https://upload-bbs.mihoyo.com/game/${game}/app_icon.png');`)
+                    $('#forum-name')[0].innerText = game_list[i][0]
+                    break;
+                }
+                // game_element.innerHTML += `<div class="submenu__item" onclick="load_page('/${game_list[i][3]}')">${game_list[i][0]}</div>`
             }
         }
     }, (rej) => {

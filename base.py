@@ -11,7 +11,7 @@ if platform.system() == 'Windows':
 
 app_version = '0.0.1.0'
 user_agent = f"HoMoLab/{app_version} (Authcode: {''.join((''.join(random.sample(string.digits + string.ascii_letters, 32))).lower())})"
-git_commit = "de5f1f320609751ee6abd3483235dc600bf7fdf4"
+git_commit = "9c89675be54ffcbe5207a8d61505ad8dd948cdfa"
 in_build = False
 
 first_open = True

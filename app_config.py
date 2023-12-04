@@ -66,10 +66,10 @@ app_config_value_type = {
         "is_disabled": False
     },
     'using_flask': {
-        'display_string': 'flask as backbone',
+        'display_string': '使用系统浏览器显示GUI',
         'type': 'boolean',
         'upload_type': "boolean",
-        "is_disabled": False
+        "is_disabled": True
     }
 }
 
