@@ -917,7 +917,22 @@ function showLogin() {
                                     $('#password')[0].parentElement.classList.add('mdui-textfield-invalid')
                                     mdui.mutation();
                                 }else{
-                                    $('#send-btn')[0].setAttribute('disabled','')
+                                    $('#sms-btn')[0].setAttribute('disabled','')
+                                    let code_wait = setInterval(() => {
+                                        let btn = $('#sms-btn')[0];
+                                        if(btn !== undefined){
+                                            let wait_time = parseInt(btn.getAttribute('wait-time'))-1;
+                                            btn.setAttribute('wait-time', wait_time)
+                                            btn.innerText = `${wait_time}s`
+                                        }
+                                    }, 1000)
+                                    setTimeout((id) => {
+                                        clearInterval(id)
+                                        let btn = $('#sms-btn')[0];
+                                        btn.setAttribute('wait-time', '60')
+                                        btn.innerText = '获取验证码'
+                                        btn.removeAttribute('disabled')
+                                    }, 60000, code_wait)
                                 }
                             })
                         }
@@ -1164,7 +1179,7 @@ $('.setting-btn')[0].addEventListener('click', () => {
             about_btn.classList.add('submit-btn')
             about_btn.innerText = '关于'
             about_btn.addEventListener('click', () => {
-                mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}</p><p style="font-size: 12px; ">提交：${app_config.git_commit}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', () => {
+                mdui.alert(`<p style="font-size: 12px; ">版本：${app_config.version}</p><p style="font-size: 12px; ">提交：${app_config.git_commit}</p><p style="font-size: 12px; ">Python版本：${app_config.python_version}</p><br/><p>本软件使用GNU General Public License v3.0协议进行开源，其源代码可在 https://github.com/Error063/ReHomoLab 查阅，使用时请遵守该协议。</p>`, '关于 Re: HoMoLab', () => {
                 }, {confirmText: "好"})
             })
             aim_window.appendChild(about_btn)
@@ -1186,7 +1201,7 @@ $('#forum-info')[0].addEventListener('click', () => {
         new_overlay.addEventListener('click', (e) => {
             if (e.target.classList.contains('overlay')) {
                 $('.forum-select-outer').animate({
-                    left: '-=200px'
+                    left: '-=300px'
                 }, 200, 'swing', () => {
                     $(e.target).fadeOut(100, () => {
                         e.target.remove();
@@ -1212,7 +1227,7 @@ $('#forum-info')[0].addEventListener('click', () => {
         document.body.appendChild(new_overlay);
         $(new_overlay).fadeIn(100, () => {
             $('.forum-select-outer').animate({
-                left: '+=200px'
+                left: '+=300px'
             }, 200, 'swing')
         });
     }
